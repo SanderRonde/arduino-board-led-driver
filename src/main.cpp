@@ -6,6 +6,7 @@
 void setup() {
 	Serial.begin(115200);
 	FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+	while (!Serial) { }
 }
 
 CRGB leds[NUM_LEDS] = { CRGB::Black };
