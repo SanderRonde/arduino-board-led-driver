@@ -270,10 +270,10 @@ namespace Modes {
 				char* cur_part = str + 4;
 				color.b = strtol(cur_part, NULL, 16);
 				cur_part -= 2;
-				cur_part[3] = '\0';
+				cur_part[2] = '\0';
 				color.g = strtol(cur_part, NULL, 16);
 				cur_part -= 2;
-				cur_part[3] = '\0';
+				cur_part[2] = '\0';
 				color.r = strtol(cur_part, NULL, 16);
 
 				for (int i = 0; i < NUM_LEDS; i++) {
