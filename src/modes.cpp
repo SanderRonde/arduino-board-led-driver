@@ -3,17 +3,13 @@
 #include <globals.h>
 #include <power.h>
 #include <modes.h>
+#include <util.h>
 
 #define MAX_DOTS 5
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
 
 namespace Modes {
-	typedef enum DIR {
-		DIR_BACKWARDS = 0,
-		DIR_FORWARDS = 1
-	} dir_t;
-
 	Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
 
 	void (*iterate_fn)(void) = NULL;
@@ -150,7 +146,7 @@ namespace Modes {
 		int split_colors_len = 0;
 		int update_time = 0;
 		int leds_per_split = 0;
-		int offset = 0;
+		long offset = 0;
 		dir_t dir = DIR_FORWARDS;
 
 		void do_iteration() {
@@ -169,11 +165,7 @@ namespace Modes {
 			}
 
 			if (update_time != 0) {
-				if (dir == DIR_FORWARDS) {
-					offset++;
-				} else {
-					offset--;
-				}
+				Util::apply_change(dir, &offset);
 			}
 
 			FastLED.show(Power::get_scale());
@@ -212,7 +204,7 @@ namespace Modes {
 		CRGB pattern_colors[MAX_PATTERN_LEN];
 		int pattern_len = 0;
 		int update_time = 0;
-		int offset = 0;
+		long offset = 0;
 		dir_t dir = DIR_FORWARDS;
 
 		void do_iteration() {
@@ -223,11 +215,7 @@ namespace Modes {
 			}
 
 			if (update_time != 0) {
-				if (dir == DIR_FORWARDS) {
-					offset++;
-				} else {
-					offset--;
-				}
+				Util::apply_change(dir, &offset);
 			}
 
 			FastLED.show(Power::get_scale());

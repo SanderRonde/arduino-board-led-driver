@@ -11,6 +11,11 @@ namespace Modes {
 		LED_MODE_OFF
 	} led_mode_t;
 
+	typedef enum DIR {
+		DIR_BACKWARDS = 0,
+		DIR_FORWARDS = 1
+	} dir_t;
+
 	extern Modes::led_mode_t cur_mode;
 
 	extern void (*iterate_fn)(void);
