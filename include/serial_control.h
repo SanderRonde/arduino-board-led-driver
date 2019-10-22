@@ -3,8 +3,7 @@
 #include <string.h>
 #include <Arduino.h>
 
-// TODO: change when I get more RAM
-#define MAX_ARG_LEN 50
+#define MAX_ARG_LEN 256
 
 namespace SerialControl {
 	extern char received_chars[MAX_ARG_LEN];
