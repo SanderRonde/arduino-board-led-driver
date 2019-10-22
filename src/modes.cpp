@@ -27,6 +27,10 @@ namespace Modes {
 			mode_update_time = update_time;
 			cur_mode = Modes::LED_MODE_OFF;
 		}
+
+		void help() {
+			Serial.println("No args");
+		}
 	}
 
 	namespace Solid {
@@ -57,6 +61,10 @@ namespace Modes {
 			iterate_fn = do_iteration;
 			mode_update_time = update_time;
 			cur_mode = Modes::LED_MODE_SOLID;
+		}
+
+		void help() {
+			Serial.println("/ solid [intensity] [r] [g] [b] \\");
 		}
 	}
 
@@ -152,6 +160,10 @@ namespace Modes {
 			mode_update_time = update_time;
 			cur_mode = Modes::LED_MODE_OFF;
 		}
+
+		void help() {
+			Serial.println("/ dot [intensity] [bg_r] [bg_g] [bg_b] ...[[dot_size] [dot_speed(ms)] [dot_dir] [dot_pos(percentage)] [dot_r] [dot_g] [dot_b]] \\");
+		}
 	}
 
 	namespace Split {
@@ -217,6 +229,10 @@ namespace Modes {
 			}
 			cur_mode = Modes::LED_MODE_SPLIT;
 		}
+
+		void help() {
+			Serial.println("/ split [intensity] [update_time(ms)] [dir] ...[[r] [g] [b]]] \\");
+		}
 	}
 
 	namespace Pattern {
@@ -225,6 +241,7 @@ namespace Modes {
 		int update_time = 0;
 		long offset = 0;
 		dir_t dir = DIR_FORWARDS;
+		unsigned int intensity = 0;
 
 		void do_iteration() {
 			for (int i = 0; i < NUM_LEDS; i += pattern_len) {
@@ -237,15 +254,20 @@ namespace Modes {
 				Util::apply_change(dir, &offset);
 			}
 
-			FastLED.show();
+			if (intensity == 0) {
+				FastLED.show(Power::get_scale());
+			} else {
+				FastLED.show(intensity);
+			}
 		}
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
-			update_time = atoi(serial_data[2].c_str());
-			dir = atoi(serial_data[3].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
+			intensity = atoi(serial_data[2].c_str());
+			update_time = atoi(serial_data[3].c_str());
+			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
 			pattern_len = 0;
 
-			for (int i = 4; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 5; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
 				pattern_colors[pattern_len++] = CRGB(
 					atoi(serial_data[i].c_str()),
 					atoi(serial_data[i + 1].c_str()),
@@ -260,6 +282,10 @@ namespace Modes {
 				mode_update_time = 1000;
 			}
 			cur_mode = Modes::LED_MODE_PATTERN;
+		}
+
+		void help() {
+			Serial.println("/ pattern [intensity] [update_time(ms)] [dir] ...[[r] [g] [b]] \\");
 		}
 	}
 
@@ -297,6 +323,10 @@ namespace Modes {
 			iterate_fn = do_iteration;
 			mode_update_time = 0;
 			cur_mode = Modes::LED_MODE_PRIMED;
+		}
+
+		void help() {
+			Serial.println("/ prime \\");
 		}
 	}
 }

@@ -30,6 +30,24 @@ namespace SerialControl {
 		return serial_data[0][0] == '/' && serial_data[length - 1][0] == '\\';
 	}
 
+	void get_help(String serial_data[MAX_ARG_LEN]) {
+		if (serial_data[1] == "off") {
+			Modes::Off::help();
+		} else if (serial_data[1] == "solid") {
+			Modes::Solid::help();
+		} else if (serial_data[1] == "dot") {
+			Modes::Dot::help();
+		} else if (serial_data[1] == "split") {
+			Modes::Split::help();
+		} else if (serial_data[1] == "pattern") {
+			Modes::Pattern::help();
+		} else if (serial_data[1] == "prime" ){
+			Modes::Prime::help();
+		} else {
+			Serial.println("Unkown help type");
+		}
+	}
+
 	void handle_serial(const String str) {
 		String serial_data[MAX_ARG_LEN];
 		int length = parse_serial(str, serial_data);
@@ -52,6 +70,8 @@ namespace SerialControl {
 			Modes::Prime::handle_serial(serial_data);
 		} else if (serial_data[1] == "leds") {
 			Serial.println(NUM_LEDS);
+		} else if (serial_data[1] == "help") {
+			get_help(serial_data);
 		}
 	}
 

@@ -27,35 +27,47 @@ namespace Modes {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+
+		void help();
 	}
 
 	namespace Solid {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+
+		void help();
 	}
 
 	namespace Dot {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+
+		void help();
 	}
 
 	namespace Split {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+		
+		void help();
 	}
 
 	namespace Pattern {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+
+		void help();
 	}
 
 	namespace Prime {
 		void do_iteration();
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+		
+		void help();
 	}
 }
