@@ -4,6 +4,7 @@
 #include <power.h>
 #include <modes.h>
 #include <util.h>
+#include <vec.h>
 
 #define MAX_DOTS 5
 #define MAX_SPLIT_COLORS 10
@@ -327,6 +328,65 @@ namespace Modes {
 
 		void help() {
 			Serial.println("/ prime \\");
+		}
+	}
+
+	namespace Flash {
+		typedef enum flash_mode {
+			FLAS_MODE_JUMP,
+			FLAS_MODE_FADE,
+			FLAS_MODE_STROBE
+		} flash_mode_t;
+
+		const unsigned long update_time = 1000UL * 1UL;
+		Vec::vec_t<CRGB> flash_vec = Vec::vec_create<CRGB>();
+		flash_mode_t flash_mode = FLAS_MODE_JUMP;
+
+		void do_iteration() {
+			for (int i = 0; i < NUM_LEDS; i++) {
+				leds[i] = color;
+			}
+
+			if (intensity == 0) {
+				FastLED.show(Power::get_scale());
+			} else {
+				FastLED.show(intensity);
+			}
+		}
+
+		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
+			update_time = atol(serial_data[2].c_str());
+			if (strcmp(serial_data[3].c_str(), "jump") == 0) {
+				flash_mode = FLAS_MODE_JUMP;
+			} else if (strcmp(serial_data[3].c_str(), "fade") == 0) {
+				flash_mode = FLAS_MODE_FADE;
+			} else if (strcmp(serial_data[3].c_str(), "strobe") == 0) {
+				flash_mode = FLAS_MODE_STROBE;
+			} else {
+				Serial.println("Invalid mode");
+				return;
+			}
+
+			flash_vec = Vec::vec_refresh(flash_vec, false);
+			for (int i = 6; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+				Vec::vec_push(flash_vec, CRGB(
+					atoi(serial_data[i + 4].c_str()),
+					atoi(serial_data[i + 5].c_str()),
+					atoi(serial_data[i + 6].c_str())
+				));
+			}
+
+			iterate_fn = do_iteration;
+			if (flash_mode == FLAS_MODE_FADE) {
+				mode_update_time = 0;
+			} else {
+				mode_update_time = update_time;
+			}
+			cur_mode = Modes::LED_MODE_FLASH;
+		}
+
+		void help() {
+			Serial.println("/ flash [update_time(ms)] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
 		}
 	}
 }

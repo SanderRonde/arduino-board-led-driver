@@ -43,6 +43,8 @@ namespace SerialControl {
 			Modes::Pattern::help();
 		} else if (serial_data[1] == "prime" ){
 			Modes::Prime::help();
+		} else if (serial_data[1] == "flash" ){
+			Modes::Flash::help();
 		} else {
 			Serial.println("Unkown help type");
 		}
@@ -68,6 +70,8 @@ namespace SerialControl {
 			Modes::Pattern::handle_serial(serial_data);
 		} else if (serial_data[1] == "prime" ){
 			Modes::Prime::handle_serial(serial_data);
+		} else if (serial_data[1] == "flash" ){
+			Modes::Flash::help();
 		} else if (serial_data[1] == "leds") {
 			Serial.println(NUM_LEDS);
 		} else if (serial_data[1] == "help") {
