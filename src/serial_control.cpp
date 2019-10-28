@@ -77,6 +77,11 @@ namespace SerialControl {
 		} else if (serial_data[1] == "help") {
 			get_help(serial_data);
 		}
+		Serial.println("ack");
+		Serial.println("ack");
+		Serial.println("ack");
+		Serial.println("ack");
+		Serial.println("ack");
 	}
 
 	void recv_with_end_marker() {
