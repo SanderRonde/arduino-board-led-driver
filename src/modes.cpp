@@ -235,22 +235,37 @@ namespace Modes {
 	}
 
 	namespace Pattern {
-		CRGB pattern_colors[MAX_PATTERN_LEN];
-		int pattern_len = 0;
-		int update_time = 0;
+		CRGB pattern_colors[MAX_PATTERN_LEN * 2];
+		unsigned int pattern_len = 0;
+		unsigned int update_time = 0;
 		long offset = 0;
 		dir_t dir = DIR_FORWARDS;
 		unsigned int intensity = 0;
+		unsigned int block_size = 0;
+
+		CRGB* get_offset_colors() {
+			if (dir == DIR_FORWARDS) {
+				// Go back in the colors
+				return &pattern_colors[pattern_len - offset];
+			} else {
+				// Go forwards in the copied colors
+				return &pattern_colors[offset];
+			}
+		}
 
 		void do_iteration() {
-			for (int i = 0; i < NUM_LEDS; i += pattern_len) {
-				for (int j = 0; j < pattern_len; j++) {
-					leds[(j + i + offset + NUM_LEDS) % NUM_LEDS] = pattern_colors[j];
+			CRGB* offset_colors = get_offset_colors();
+			for (unsigned int i = 0; i < NUM_LEDS; i += pattern_len * block_size) {
+				for (unsigned int j = 0; j < pattern_len; j++) {
+					int pattern_total_offset = i + (j * block_size);
+					for (unsigned int k = 0; k < block_size; k++) {
+						leds[pattern_total_offset + k] = offset_colors[j];
+					}
 				}
 			}
 
 			if (update_time != 0) {
-				Util::apply_change(dir, &offset);
+				Util::apply_change(DIR_FORWARDS, &offset, pattern_len);
 			}
 
 			if (intensity == 0) {
@@ -264,15 +279,25 @@ namespace Modes {
 			intensity = atoi(serial_data[2].c_str());
 			update_time = atoi(serial_data[3].c_str());
 			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
+			block_size = atoi(serial_data[5].c_str());
 			pattern_len = 0;
 
-			for (int i = 5; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 6; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
 				pattern_colors[pattern_len++] = CRGB(
 					atoi(serial_data[i].c_str()),
 					atoi(serial_data[i + 1].c_str()),
 					atoi(serial_data[i + 2].c_str())	
 				);
 			}
+			for (unsigned int i = 0; i < pattern_len; i++) {
+				pattern_colors[pattern_len + i] = CRGB(
+					pattern_colors[i].r,
+					pattern_colors[i].g,
+					pattern_colors[i].b
+				);
+			}
+			// memcpy(&pattern_colors[pattern_len],
+			// 	pattern_colors, (sizeof(CRGB) * pattern_len));
 			
 			iterate_fn = do_iteration;
 			if (update_time != 0) {
@@ -284,7 +309,7 @@ namespace Modes {
 		}
 
 		void help() {
-			Serial.println("/ pattern [intensity] [update_time(ms)] [dir] ...[[r] [g] [b]] \\");
+			Serial.println("/ pattern [intensity] [update_time(ms)] [dir] [block_size] ...[[r] [g] [b]] \\");
 		}
 	}
 
