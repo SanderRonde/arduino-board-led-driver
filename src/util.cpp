@@ -18,6 +18,6 @@ namespace Util {
 	}
 
 	void apply_change(Modes::dir_t dir, long *value) {
-		apply_change(dir, value, __LONG_LONG_MAX__ - 100);
+		apply_change(dir, value, __LONG_MAX__ - 100);
 	}
 }
