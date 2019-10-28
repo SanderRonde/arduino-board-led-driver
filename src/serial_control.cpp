@@ -31,22 +31,22 @@ namespace SerialControl {
 	}
 
 	void get_help(String serial_data[MAX_ARG_LEN]) {
-		if (serial_data[1] == "off") {
+		if (serial_data[2] == "off") {
 			Modes::Off::help();
-		} else if (serial_data[1] == "solid") {
+		} else if (serial_data[2] == "solid") {
 			Modes::Solid::help();
-		} else if (serial_data[1] == "dot") {
+		} else if (serial_data[2] == "dot") {
 			Modes::Dot::help();
-		} else if (serial_data[1] == "split") {
+		} else if (serial_data[2] == "split") {
 			Modes::Split::help();
-		} else if (serial_data[1] == "pattern") {
+		} else if (serial_data[2] == "pattern") {
 			Modes::Pattern::help();
-		} else if (serial_data[1] == "prime" ){
+		} else if (serial_data[2] == "prime" ){
 			Modes::Prime::help();
-		} else if (serial_data[1] == "flash" ){
+		} else if (serial_data[2] == "flash" ){
 			Modes::Flash::help();
 		} else {
-			Serial.println("Unkown help type");
+			Serial.println("Unkown help type, type: \"/ help [cmd] \\\"");
 		}
 	}
 
