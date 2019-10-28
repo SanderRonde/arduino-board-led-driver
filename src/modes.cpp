@@ -4,11 +4,13 @@
 #include <power.h>
 #include <modes.h>
 #include <util.h>
-#include <vec.h>
 
 #define MAX_DOTS 5
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
+#define MAX_FLASH_LEN 256
+
+#define FADE_LOOP_LEN 2
 
 namespace Modes {
 	Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
@@ -333,16 +335,64 @@ namespace Modes {
 
 	namespace Flash {
 		typedef enum flash_mode {
-			FLAS_MODE_JUMP,
-			FLAS_MODE_FADE,
-			FLAS_MODE_STROBE
+			FLASH_MODE_JUMP,
+			FLASH_MODE_FADE,
+			FLASH_MODE_STROBE
 		} flash_mode_t;
 
-		const unsigned long update_time = 1000UL * 1UL;
-		Vec::vec_t<CRGB> flash_vec = Vec::vec_create<CRGB>();
-		flash_mode_t flash_mode = FLAS_MODE_JUMP;
+		unsigned long update_time = 1000UL * 1UL;
+		CRGB flash_vec[MAX_FLASH_LEN];
+		unsigned int flash_vec_len;
+		unsigned int color_index = 0;
+		flash_mode_t flash_mode = FLASH_MODE_JUMP;
+		unsigned int intensity = 0;
+
+		unsigned int fade_index = 0;
+
+		CRGB fade_color(CRGB current, CRGB next, int progress) {
+			CRGB color;
+			float p = progress / ((float)update_time - 1);
+			float invert_p = 1 - p;
+			color.r = (uint8_t) (invert_p * current.r) + (p * next.r) + 0.5;
+			color.g = (uint8_t) (invert_p * current.g) + (p * next.g) + 0.5;
+			color.b = (uint8_t) (invert_p * current.b) + (p * next.b) + 0.5;
+			return color;
+		}
 
 		void do_iteration() {
+			CRGB color;
+			if (flash_mode == FLASH_MODE_FADE) {
+				// Fade from color to next color
+				unsigned int color_index_next = (color_index + 1) % flash_vec_len;
+				color = fade_color(
+					flash_vec[color_index],
+					flash_vec[color_index_next],
+					fade_index);
+				fade_index += FADE_LOOP_LEN;
+				if (fade_index >= update_time) {
+					// Go to next color
+					fade_index = 0;
+					color_index = color_index_next;
+				}
+			} else if (flash_mode == FLASH_MODE_STROBE) {
+				// Alternate black and white
+				if (color_index == 1) {
+					if (flash_vec_len == 0) {
+						color = CRGB::White;
+					} else {
+						color = flash_vec[color_index];
+						color_index = (color_index + 1) % flash_vec_len;
+					}
+				} else {
+					color = CRGB::Black;
+				}
+				color_index = !color_index;
+			} else {
+				// Jump to next color
+				color = flash_vec[color_index];
+				color_index = (color_index + 1) % flash_vec_len;
+			}
+
 			for (int i = 0; i < NUM_LEDS; i++) {
 				leds[i] = color;
 			}
@@ -355,38 +405,51 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
-			update_time = atol(serial_data[2].c_str());
-			if (strcmp(serial_data[3].c_str(), "jump") == 0) {
-				flash_mode = FLAS_MODE_JUMP;
-			} else if (strcmp(serial_data[3].c_str(), "fade") == 0) {
-				flash_mode = FLAS_MODE_FADE;
-			} else if (strcmp(serial_data[3].c_str(), "strobe") == 0) {
-				flash_mode = FLAS_MODE_STROBE;
+			color_index = 0;
+			intensity = atoi(serial_data[2].c_str());
+			update_time = atol(serial_data[3].c_str());
+			if (strcmp(serial_data[4].c_str(), "jump") == 0) {
+				flash_mode = FLASH_MODE_JUMP;
+			} else if (strcmp(serial_data[4].c_str(), "fade") == 0) {
+				flash_mode = FLASH_MODE_FADE;
+			} else if (strcmp(serial_data[4].c_str(), "strobe") == 0) {
+				flash_mode = FLASH_MODE_STROBE;
 			} else {
 				Serial.println("Invalid mode");
 				return;
 			}
 
-			flash_vec = Vec::vec_refresh(flash_vec, false);
-			for (int i = 6; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
-				Vec::vec_push(flash_vec, CRGB(
-					atoi(serial_data[i + 4].c_str()),
-					atoi(serial_data[i + 5].c_str()),
-					atoi(serial_data[i + 6].c_str())
-				));
+			flash_vec_len = 0;
+			for (int i = 5; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+				flash_vec[flash_vec_len++] = CRGB(
+					atoi(serial_data[i].c_str()),
+					atoi(serial_data[i + 1].c_str()),
+					atoi(serial_data[i + 2].c_str())
+				);
+			}
+
+			if (flash_mode == FLASH_MODE_FADE && update_time == 0) {
+				Serial.println("Update time 0 can't be used when fading");
+				return;
 			}
 
 			iterate_fn = do_iteration;
-			if (flash_mode == FLAS_MODE_FADE) {
-				mode_update_time = 0;
-			} else {
-				mode_update_time = update_time;
+			switch (flash_mode) {
+				case FLASH_MODE_FADE:
+					mode_update_time = 0;
+					fade_index = 0;
+					break;
+				case FLASH_MODE_STROBE:
+					mode_update_time = update_time / 2;
+					break;
+				default:
+					mode_update_time = update_time;
 			}
 			cur_mode = Modes::LED_MODE_FLASH;
 		}
 
 		void help() {
-			Serial.println("/ flash [update_time(ms)] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
+			Serial.println("/ flash [intensity] [update_time(ms)] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
 		}
 	}
 }
