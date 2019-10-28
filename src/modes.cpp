@@ -296,8 +296,6 @@ namespace Modes {
 					pattern_colors[i].b
 				);
 			}
-			// memcpy(&pattern_colors[pattern_len],
-			// 	pattern_colors, (sizeof(CRGB) * pattern_len));
 			
 			iterate_fn = do_iteration;
 			if (update_time != 0) {
