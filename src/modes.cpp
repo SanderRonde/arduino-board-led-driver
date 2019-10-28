@@ -360,11 +360,12 @@ namespace Modes {
 		uint8_t scales[MAX_FLASH_LEN];
 		unsigned int flash_vec_len;
 		unsigned int color_index = 0;
-		bool flash_index = 0;
+		int flash_index = 0;
 		flash_mode_t flash_mode = FLASH_MODE_JUMP;
 		unsigned int intensity = 0;
 
 		unsigned int fade_index = 0;
+		int amount_per_strobe = 0;
 
 		CRGB fade_color(CRGB current, CRGB next, int progress) {
 			CRGB color;
@@ -405,7 +406,7 @@ namespace Modes {
 			// Alternate color and black
 			CRGB color;
 			unsigned int overridable_intensity = intensity;
-			if (flash_index == 1) {
+			if (flash_index == 0) {
 				if (flash_vec_len == 0) {
 					color = CRGB::White;
 					overridable_intensity = white_scale;
@@ -419,7 +420,10 @@ namespace Modes {
 				color = CRGB::Black;
 				overridable_intensity = 255;
 			}
-			flash_index = !flash_index;
+			flash_index++;
+			if (flash_index >= amount_per_strobe) {
+				flash_index = 0;
+			}
 
 			if (overridable_intensity == 0) {
 				FastLED.showColor(color, Power::get_scale(color));
@@ -447,11 +451,12 @@ namespace Modes {
 			last_loop_iter = millis();
 			intensity = atoi(serial_data[2].c_str());
 			update_time = atol(serial_data[3].c_str());
-			if (strcmp(serial_data[4].c_str(), "jump") == 0) {
+			amount_per_strobe = atoi(serial_data[4].c_str());
+			if (strcmp(serial_data[5].c_str(), "jump") == 0) {
 				flash_mode = FLASH_MODE_JUMP;
-			} else if (strcmp(serial_data[4].c_str(), "fade") == 0) {
+			} else if (strcmp(serial_data[5].c_str(), "fade") == 0) {
 				flash_mode = FLASH_MODE_FADE;
-			} else if (strcmp(serial_data[4].c_str(), "strobe") == 0) {
+			} else if (strcmp(serial_data[5].c_str(), "strobe") == 0) {
 				flash_mode = FLASH_MODE_STROBE;
 			} else {
 				Serial.println("Invalid mode");
@@ -459,7 +464,7 @@ namespace Modes {
 			}
 
 			flash_vec_len = 0;
-			for (int i = 5; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 6; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
 				flash_vec[flash_vec_len] = CRGB(
 					atoi(serial_data[i].c_str()),
 					atoi(serial_data[i + 1].c_str()),
@@ -493,7 +498,7 @@ namespace Modes {
 		}
 
 		void help() {
-			Serial.println("/ flash [intensity] [update_time(ms)] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
+			Serial.println("/ flash [intensity] [update_time(ms)] [amount_per_strobe] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
 		}
 	}
 }
