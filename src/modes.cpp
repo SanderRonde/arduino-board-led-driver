@@ -5,7 +5,7 @@
 #include <modes.h>
 #include <util.h>
 
-#define MAX_DOTS 5
+#define MAX_DOTS 20
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
 #define MAX_FLASH_LEN 256
@@ -130,10 +130,9 @@ namespace Modes {
 			);
 
 			// Parse the dots
-			int last_dot = 0;
+			int dot_index = 0;
 			for (int i = 6; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 7) {
-				last_dot = ((i - 6) % 7);
-				dot_t* dot = &dots[last_dot];
+				dot_t* dot = &dots[dot_index];
 				// First get the size
 				dot->dot_size = atoi(serial_data[i].c_str());
 				// Then the speed
@@ -149,9 +148,10 @@ namespace Modes {
 					atoi(serial_data[i + 5].c_str()),
 					atoi(serial_data[i + 6].c_str())
 				);
+				dot_index++;
 			}
 			// Unset all other dots
-			for (int i = last_dot + 1; i < MAX_DOTS; i++) {
+			for (int i = dot_index; i < MAX_DOTS; i++) {
 				dots[i].dot_size = 0;
 			}
 
