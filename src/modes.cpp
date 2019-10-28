@@ -10,8 +10,6 @@
 #define MAX_PATTERN_LEN 20
 #define MAX_FLASH_LEN 256
 
-#define FADE_LOOP_LEN 2
-
 namespace Modes {
 	Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
 
@@ -40,16 +38,13 @@ namespace Modes {
 		const unsigned long update_time = 1000UL * 1UL;
 		CRGB color = CRGB::Black;
 		unsigned int intensity = 0;
+		uint8_t scale;
 
 		void do_iteration() {
-			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = color;
-			}
-
 			if (intensity == 0) {
-				FastLED.show(Power::get_scale());
+				FastLED.showColor(color, scale);
 			} else {
-				FastLED.show(intensity);
+				FastLED.showColor(color, intensity);
 			}
 		}
 
@@ -60,6 +55,7 @@ namespace Modes {
 				atoi(serial_data[4].c_str()),
 				atoi(serial_data[5].c_str())
 			);
+			scale = Power::get_scale(color);
 
 			iterate_fn = do_iteration;
 			mode_update_time = update_time;
@@ -312,11 +308,7 @@ namespace Modes {
 				cur_part[2] = '\0';
 				color.r = strtol(cur_part, NULL, 16);
 
-				for (int i = 0; i < NUM_LEDS; i++) {
-					leds[i] = color;
-				}
-
-				FastLED.show(Power::get_scale());
+				FastLED.showColor(color, Power::get_scale(color));
 			}
 		}
 
@@ -342,8 +334,10 @@ namespace Modes {
 
 		unsigned long update_time = 1000UL * 1UL;
 		CRGB flash_vec[MAX_FLASH_LEN];
+		uint8_t scales[MAX_FLASH_LEN];
 		unsigned int flash_vec_len;
 		unsigned int color_index = 0;
+		bool flash_index = 0;
 		flash_mode_t flash_mode = FLASH_MODE_JUMP;
 		unsigned int intensity = 0;
 
@@ -358,54 +352,76 @@ namespace Modes {
 			color.b = (uint8_t) (invert_p * current.b) + (p * next.b) + 0.5;
 			return color;
 		}
-
-		void do_iteration() {
-			CRGB color;
-			if (flash_mode == FLASH_MODE_FADE) {
-				// Fade from color to next color
-				unsigned int color_index_next = (color_index + 1) % flash_vec_len;
-				color = fade_color(
-					flash_vec[color_index],
-					flash_vec[color_index_next],
-					fade_index);
-				fade_index += FADE_LOOP_LEN;
-				if (fade_index >= update_time) {
-					// Go to next color
-					fade_index = 0;
-					color_index = color_index_next;
-				}
-			} else if (flash_mode == FLASH_MODE_STROBE) {
-				// Alternate black and white
-				if (color_index == 1) {
-					if (flash_vec_len == 0) {
-						color = CRGB::White;
-					} else {
-						color = flash_vec[color_index];
-						color_index = (color_index + 1) % flash_vec_len;
-					}
-				} else {
-					color = CRGB::Black;
-				}
-				color_index = !color_index;
-			} else {
-				// Jump to next color
-				color = flash_vec[color_index];
-				color_index = (color_index + 1) % flash_vec_len;
-			}
-
-			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = color;
+		
+		unsigned int last_loop_iter = millis();
+		void iter_fade() {
+			// Fade from color to next color
+			unsigned int color_index_next = (color_index + 1) % flash_vec_len;
+			CRGB color = fade_color(
+				flash_vec[color_index],
+				flash_vec[color_index_next],
+				fade_index);
+			unsigned int now = millis();
+			fade_index += (now - last_loop_iter);
+			last_loop_iter = now;
+			if (fade_index >= update_time) {
+				// Go to next color
+				fade_index = 0;
+				color_index = color_index_next;
 			}
 
 			if (intensity == 0) {
-				FastLED.show(Power::get_scale());
+				FastLED.showColor(color, Power::get_scale(color));
 			} else {
-				FastLED.show(intensity);
+				FastLED.showColor(color, intensity);
+			}
+		}
+
+		uint8_t white_scale = Power::get_scale(CRGB::White);
+		void iter_strobe() {
+			// Alternate color and black
+			CRGB color;
+			unsigned int overridable_intensity = intensity;
+			if (flash_index == 1) {
+				if (flash_vec_len == 0) {
+					color = CRGB::White;
+					overridable_intensity = white_scale;
+				} else {
+					color = flash_vec[color_index];
+					overridable_intensity = overridable_intensity == 0 ?
+						scales[color_index] : overridable_intensity;
+					color_index = (color_index + 1) % flash_vec_len;
+				}
+			} else {
+				color = CRGB::Black;
+				overridable_intensity = 255;
+			}
+			flash_index = !flash_index;
+
+			if (overridable_intensity == 0) {
+				FastLED.showColor(color, Power::get_scale(color));
+			} else {
+				FastLED.showColor(color, overridable_intensity);
+			}
+		}
+
+		void iter_jump() {
+			// Jump to next color
+			CRGB color = flash_vec[color_index];
+			uint8_t scale = scales[color_index];
+			color_index = (color_index + 1) % flash_vec_len;
+
+			if (intensity == 0) {
+				FastLED.showColor(color, scale);
+			} else {
+				FastLED.showColor(color, intensity);
 			}
 		}
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
 			color_index = 0;
+			flash_index = false;
+			last_loop_iter = millis();
 			intensity = atoi(serial_data[2].c_str());
 			update_time = atol(serial_data[3].c_str());
 			if (strcmp(serial_data[4].c_str(), "jump") == 0) {
@@ -421,11 +437,13 @@ namespace Modes {
 
 			flash_vec_len = 0;
 			for (int i = 5; i < MAX_ARG_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
-				flash_vec[flash_vec_len++] = CRGB(
+				flash_vec[flash_vec_len] = CRGB(
 					atoi(serial_data[i].c_str()),
 					atoi(serial_data[i + 1].c_str()),
 					atoi(serial_data[i + 2].c_str())
 				);
+				scales[flash_vec_len] = Power::get_scale(flash_vec[flash_vec_len]);
+				flash_vec_len++;
 			}
 
 			if (flash_mode == FLASH_MODE_FADE && update_time == 0) {
@@ -433,17 +451,20 @@ namespace Modes {
 				return;
 			}
 
-			iterate_fn = do_iteration;
 			switch (flash_mode) {
 				case FLASH_MODE_FADE:
 					mode_update_time = 0;
 					fade_index = 0;
+					iterate_fn = iter_fade;
 					break;
 				case FLASH_MODE_STROBE:
 					mode_update_time = update_time / 2;
+					iterate_fn = iter_strobe;
 					break;
-				default:
+				case FLASH_MODE_JUMP:
 					mode_update_time = update_time;
+					iterate_fn = iter_jump;
+					break;
 			}
 			cur_mode = Modes::LED_MODE_FLASH;
 		}

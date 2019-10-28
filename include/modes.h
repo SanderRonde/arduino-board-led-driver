@@ -73,8 +73,6 @@ namespace Modes {
 	}
 
 	namespace Flash {
-		void do_iteration();
-
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
 		
 		void help();

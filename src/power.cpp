@@ -6,7 +6,7 @@
 #define PRETTY_SCALE_FACTOR 90UL
 #define MAX_AMPS_UINT (ALL_WHITE_AMPS * MAX_SCALE_FACTOR)
 #define PRETTY_AMPS_UINT (ALL_WHITE_AMPS * PRETTY_SCALE_FACTOR)
-#define SPLIT_FACTOR 0.56
+#define SPLIT_FACTOR 0.45
 
 #define RED_POWER_DRAW 16
 #define GREEN_POWER_DRAW 11
@@ -15,6 +15,27 @@
 #define POWER_SPLIT
 
 namespace Power {
+	uint8_t get_scale(CRGB color) {
+		#ifdef POWER_SPLIT
+		unsigned long unscaled_draw = 0;
+
+		unscaled_draw += color.r * 200 * RED_POWER_DRAW;
+		unscaled_draw += color.g * 200 * GREEN_POWER_DRAW;
+		unscaled_draw += color.b * 200 * BLUE_POWER_DRAW;
+
+		unsigned long total_draw = unscaled_draw / SPLIT_FACTOR;
+		#else
+		unsigned long total_draw = 0;
+		
+		total_draw += color.r * NUM_LEDS * RED_POWER_DRAW;
+		total_draw += color.g * NUM_LEDS * GREEN_POWER_DRAW;
+		total_draw += color.b * NUM_LEDS * BLUE_POWER_DRAW;
+
+		#endif
+		double draw_percent = ((double) PRETTY_AMPS_UINT) / (double)total_draw;
+		return (draw_percent / 2) * 255UL;
+	}
+
 	uint8_t get_scale() {
 		#ifdef POWER_SPLIT
 		unsigned long total_draw_1 = 0;
