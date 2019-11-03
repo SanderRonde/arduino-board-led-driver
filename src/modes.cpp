@@ -371,9 +371,9 @@ namespace Modes {
 			CRGB color;
 			float p = progress / ((float)update_time - 1);
 			float invert_p = 1 - p;
-			color.r = (uint8_t) (invert_p * current.r) + (p * next.r) + 0.5;
-			color.g = (uint8_t) (invert_p * current.g) + (p * next.g) + 0.5;
-			color.b = (uint8_t) (invert_p * current.b) + (p * next.b) + 0.5;
+			color.r = (uint8_t) (invert_p * current.r) + (p * next.r);
+			color.g = (uint8_t) (invert_p * current.g) + (p * next.g);
+			color.b = (uint8_t) (invert_p * current.b) + (p * next.b);
 			return color;
 		}
 		
