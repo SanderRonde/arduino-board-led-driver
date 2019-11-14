@@ -486,7 +486,7 @@ namespace Modes {
 					iterate_fn = iter_fade;
 					break;
 				case FLASH_MODE_STROBE:
-					mode_update_time = update_time / 2;
+					mode_update_time = update_time > 1 ? update_time / 2 : 1;
 					iterate_fn = iter_strobe;
 					break;
 				case FLASH_MODE_JUMP:
