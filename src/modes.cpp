@@ -506,6 +506,7 @@ namespace Modes {
 		unsigned int update_time = 0;
 		unsigned int offset = 0;
 		unsigned int last_loop_iter = millis();
+		unsigned int step = 1;
 
 		const float delta = (float) 255 / (float) NUM_LEDS;
 
@@ -513,7 +514,7 @@ namespace Modes {
 			float total = 0;
 			int led_offset = offset;
 
-			for (int i = 0; i < NUM_LEDS; i++, total += delta, led_offset++) {
+			for (int i = 0; i < NUM_LEDS; i++, total += delta, led_offset += step) {
 				if (led_offset == NUM_LEDS) {
 					led_offset = 0;
 				}
@@ -538,6 +539,10 @@ namespace Modes {
 			} else {
 				mode_update_time = update_time;
 			}
+			step = atoi(serial_data[3].c_str());
+			if (step == 0) {
+				step = 1;
+			}
 
 			iterate_fn = do_iteration;
 			cur_mode = Modes::LED_MODE_RAINBOW;
@@ -547,7 +552,7 @@ namespace Modes {
 		}
 
 		void help() {
-			Serial.println("/ rainbow [update_time(ms)]");
+			Serial.println("/ rainbow [update_time(ms)] [step] \\");
 		}
 	}
 }
