@@ -45,6 +45,8 @@ namespace SerialControl {
 			Modes::Prime::help();
 		} else if (serial_data[2] == "flash" ){
 			Modes::Flash::help();
+		} else if (serial_data[2] == "rainbow"){
+			Modes::Rainbow::help();
 		} else {
 			Serial.println("Unkown help type, type: \"/ help [cmd] \\\"");
 		}
@@ -72,6 +74,8 @@ namespace SerialControl {
 			Modes::Prime::handle_serial(serial_data);
 		} else if (serial_data[1] == "flash" ){
 			Modes::Flash::handle_serial(serial_data);
+		} else if (serial_data[1] == "rainbow") {
+			Modes::Rainbow::handle_serial(serial_data);
 		} else if (serial_data[1] == "leds") {
 			Serial.println(NUM_LEDS);
 		} else if (serial_data[1] == "help") {

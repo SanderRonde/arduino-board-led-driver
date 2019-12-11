@@ -501,4 +501,53 @@ namespace Modes {
 			Serial.println("/ flash [intensity] [update_time(ms)] [amount_per_strobe] [mode(jump|fade|strobe)] ...[[r] [g] [b]] \\");
 		}
 	}
+	
+	namespace Rainbow {
+		unsigned int update_time = 0;
+		unsigned int offset = 0;
+		unsigned int last_loop_iter = millis();
+
+		const float delta = (float) 255 / (float) NUM_LEDS;
+
+		void paint_rainbow() {
+			float total = 0;
+			int led_offset = offset;
+
+			for (int i = 0; i < NUM_LEDS; i++, total += delta, led_offset++) {
+				if (led_offset == NUM_LEDS) {
+					led_offset = 0;
+				}
+
+				leds[led_offset].setHSV(min(255, round(total)), 255, 255);
+			}
+
+			FastLED.show(255);
+		}
+
+		void do_iteration() {
+			if (update_time == 0) return;
+
+			paint_rainbow();
+			offset++;
+		}
+
+		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
+			update_time = atoi(serial_data[2].c_str());
+			if (update_time == 0) {
+				mode_update_time = 1000;
+			} else {
+				mode_update_time = update_time;
+			}
+
+			iterate_fn = do_iteration;
+			cur_mode = Modes::LED_MODE_RAINBOW;
+			offset = 0;
+
+			paint_rainbow();
+		}
+
+		void help() {
+			Serial.println("/ rainbow [update_time(ms)]");
+		}
+	}
 }

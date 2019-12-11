@@ -9,6 +9,7 @@ namespace Modes {
 		LED_MODE_PATTERN,
 		LED_MODE_PRIMED,
 		LED_MODE_FLASH,
+		LED_MODE_RAINBOW,
 		LED_MODE_OFF
 	} led_mode_t;
 
@@ -73,6 +74,12 @@ namespace Modes {
 	}
 
 	namespace Flash {
+		void handle_serial(const String serial_data[MAX_ARG_LEN]);
+		
+		void help();
+	}
+
+	namespace Rainbow {
 		void handle_serial(const String serial_data[MAX_ARG_LEN]);
 		
 		void help();
