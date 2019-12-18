@@ -265,7 +265,7 @@ namespace Modes {
 			}
 
 			if (update_time != 0) {
-				Util::apply_change(DIR_FORWARDS, &offset, pattern_len);
+				Util::apply_change(DIR_FORWARDS, &offset, 1, pattern_len);
 			}
 
 			if (intensity == 0) {
@@ -504,7 +504,7 @@ namespace Modes {
 	
 	namespace Rainbow {
 		unsigned int update_time = 0;
-		unsigned int offset = 0;
+		long offset = 0;
 		unsigned int last_loop_iter = millis();
 		unsigned int step = 1;
 
@@ -512,11 +512,11 @@ namespace Modes {
 
 		void paint_rainbow() {
 			float total = 0;
-			int led_offset = offset;
+			long led_offset = offset;
 
-			for (int i = 0; i < NUM_LEDS; i++, total += delta, led_offset += step) {
-				if (led_offset == NUM_LEDS) {
-					led_offset = 0;
+			for (int i = 0; i < NUM_LEDS; i++, total += delta, led_offset += 1) {
+				if (led_offset >= NUM_LEDS) {
+					led_offset = led_offset % NUM_LEDS;
 				}
 
 				leds[led_offset].setHSV(min(255, round(total)), 255, 255);
@@ -529,7 +529,7 @@ namespace Modes {
 			if (update_time == 0) return;
 
 			paint_rainbow();
-			offset++;
+			Util::apply_change(Modes::DIR_FORWARDS, &offset, step);
 		}
 
 		void handle_serial(const String serial_data[MAX_ARG_LEN]) {
