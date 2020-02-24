@@ -23,7 +23,7 @@ void loop() {
 
 	// If new serial data, handle that serial data
 	if (SerialControl::new_data) {
-		SerialControl::handle_serial(SerialControl::received_chars);
+		SerialControl::handle_serial();
 	}
 
 	// If new data, iterate

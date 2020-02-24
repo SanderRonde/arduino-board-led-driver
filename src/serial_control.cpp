@@ -4,21 +4,22 @@
 #include <modes.h>
 
 namespace SerialControl {
-	char received_chars[MAX_ARG_LEN];
+	char* char_blocks[MAX_ARG_BLOCKS];
 	boolean new_data = false;
 
-	int parse_serial(const String str, String data[MAX_ARG_LEN]) {
+	int parse_serial(String data[ARG_BLOCK_LEN]) {
 		int data_index = 0;
 		String current_word = "";
 
-		const char* c_str = str.c_str();
-		for (unsigned int i = 0; i < str.length(); i++) {
-			if (c_str[i] == ' ') {
-				if (data_index > MAX_ARG_LEN) return MAX_ARG_LEN;
-				data[data_index++] = current_word;
-				current_word = "";
-			} else {
-				current_word += c_str[i];
+		for (unsigned int i = 0; i < MAX_ARG_BLOCKS; i++) {
+			if (char_blocks[i] == NULL) break;
+			for (unsigned int j = 0; j < strnlen(char_blocks[i], ARG_BLOCK_LEN); j++) {
+				if (char_blocks[i][j] == ' ') {
+					data[data_index++] = current_word;
+					current_word = "";
+				} else {
+					current_word += char_blocks[i][j];
+				}
 			}
 		}
 		data[data_index++] = current_word;
@@ -26,11 +27,11 @@ namespace SerialControl {
 		return data_index - 1;
 	}
 
-	bool checksum_serial(String serial_data[MAX_ARG_LEN], int length) {
+	bool checksum_serial(String serial_data[ARG_BLOCK_LEN], int length) {
 		return serial_data[0][0] == '/' && serial_data[length - 1][0] == '\\';
 	}
 
-	void get_help(String serial_data[MAX_ARG_LEN]) {
+	void get_help(String serial_data[ARG_BLOCK_LEN]) {
 		if (serial_data[2] == "off") {
 			Modes::Off::help();
 		} else if (serial_data[2] == "solid") {
@@ -52,9 +53,18 @@ namespace SerialControl {
 		}
 	}
 
-	void handle_serial(const String str) {
-		String serial_data[MAX_ARG_LEN];
-		int length = parse_serial(str, serial_data);
+	void clear_char_buffers() {
+		for (int i = 0; i < MAX_ARG_BLOCKS; i++) {
+			if (char_blocks[i] != NULL) {
+				free(char_blocks[i]);
+				char_blocks[i] = NULL;
+			}
+		}
+	}
+
+	void handle_serial() {
+		String serial_data[ARG_BLOCK_LEN];
+		int length = parse_serial(serial_data);
 
 		if (!checksum_serial(serial_data, length)) {
 			return;
@@ -86,14 +96,17 @@ namespace SerialControl {
 		Serial.println("ack");
 		Serial.println("ack");
 		Serial.println("ack");
+
+		clear_char_buffers();
 	}
 
+	byte ndx = 0;
 	void recv_with_end_marker() {
-		static byte ndx = 0;
-		char endMarker = '\n';
-		char rc;
-
 		if (!Serial.available()) return;
+
+		char rc;
+		char endMarker = '\n';
+		int block_index = 0;
 
 		unsigned long start_time = millis();
 		while (millis() - start_time <= HOLD_TIME) {
@@ -101,14 +114,22 @@ namespace SerialControl {
 
 			rc = Serial.read();
 
+			if (char_blocks[block_index] == NULL) {
+				char_blocks[block_index] = (char*) malloc(sizeof(char) * ARG_BLOCK_LEN);
+			}
+
 			if (rc != endMarker) {
-				received_chars[ndx] = rc;
+				char_blocks[block_index][ndx] = rc;
 				ndx++;
-				if (ndx >= MAX_ARG_LEN) {
-					ndx = MAX_ARG_LEN - 1;
+				if (ndx >= ARG_BLOCK_LEN) {
+					block_index++;
+					if (block_index >= MAX_ARG_BLOCKS) {
+						Serial.println("Serial overflow");
+						return;
+					}
 				}
 			} else {
-				received_chars[ndx] = '\0'; // terminate the string
+				char_blocks[block_index][ndx] = '\0'; // terminate the string
 				ndx = 0;
 				new_data = true;
 				
