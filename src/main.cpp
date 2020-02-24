@@ -22,6 +22,9 @@ void loop() {
 	}
 
 	// If new serial data, handle that serial data
+	if (SerialControl::new_data && Modes::serial_override) {
+		Modes::serial_override();
+	}
 	if (SerialControl::new_data) {
 		SerialControl::handle_serial();
 	}

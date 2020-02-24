@@ -14,6 +14,7 @@ namespace Modes {
 	Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
 
 	void (*iterate_fn)(void) = NULL;
+	void (*serial_override)(void) = NULL;
 	unsigned long mode_update_time = 1000UL * 1UL;
 
 	namespace Off {
@@ -24,6 +25,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			iterate_fn = do_iteration;
 			mode_update_time = update_time;
 			cur_mode = Modes::LED_MODE_OFF;
@@ -49,6 +51,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			intensity = atoi(serial_data[2].c_str());
 			color = CRGB(
 				atoi(serial_data[3].c_str()),
@@ -120,6 +123,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			intensity = atoi(serial_data[2].c_str());
 
 			// Set background color
@@ -201,6 +205,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			intensity = atoi(serial_data[2].c_str());
 			update_time = atoi(serial_data[3].c_str());
 			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
@@ -276,6 +281,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			intensity = atoi(serial_data[2].c_str());
 			update_time = atoi(serial_data[3].c_str());
 			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
@@ -312,32 +318,34 @@ namespace Modes {
 	}
 
 	namespace Prime {
-		void do_iteration() {
-			if (SerialControl::new_data) {
-				char* str = SerialControl::received_chars;
+		void override_serial() {
+			// It will likely only concern the first block
+			char* str = SerialControl::char_blocks[0];
 
-				// 3 * 2 hex chars
-				if (strlen(str) != 6) {
-					return;
-				}
-
-				CRGB color;
-				char* cur_part = str + 4;
-				color.b = strtol(cur_part, NULL, 16);
-				cur_part -= 2;
-				cur_part[2] = '\0';
-				color.g = strtol(cur_part, NULL, 16);
-				cur_part -= 2;
-				cur_part[2] = '\0';
-				color.r = strtol(cur_part, NULL, 16);
-
-				FastLED.showColor(color, Power::get_scale(color));
+			// 3 * 2 hex chars
+			if (strnlen(str, ARG_BLOCK_LEN) != 6) {
+				return;
 			}
+
+			CRGB color;
+			char* cur_part = str + 4;
+			color.b = strtol(cur_part, NULL, 16);
+			cur_part -= 2;
+			cur_part[2] = '\0';
+			color.g = strtol(cur_part, NULL, 16);
+			cur_part -= 2;
+			cur_part[2] = '\0';
+			color.r = strtol(cur_part, NULL, 16);
+
+			FastLED.showColor(color, Power::get_scale(color));
+
+			SerialControl::clear_char_buffers();
 		}
 
 		void do_iteration() { }
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = override_serial;
 			FastLED.showColor(CRGB::Black);
 
 			iterate_fn = do_iteration;
@@ -448,6 +456,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			color_index = 0;
 			flash_index = false;
 			last_loop_iter = millis();
@@ -535,6 +544,7 @@ namespace Modes {
 		}
 
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
 			update_time = atoi(serial_data[2].c_str());
 			if (update_time == 0) {
 				mode_update_time = 1000;

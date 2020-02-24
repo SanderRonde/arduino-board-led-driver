@@ -21,6 +21,7 @@ namespace Modes {
 	extern Modes::led_mode_t cur_mode;
 
 	extern void (*iterate_fn)(void);
+	extern void (*serial_override)(void);
 	extern unsigned long mode_update_time;
 
 	namespace Off {
