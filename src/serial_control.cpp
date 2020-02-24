@@ -92,8 +92,13 @@ namespace SerialControl {
 		static byte ndx = 0;
 		char endMarker = '\n';
 		char rc;
-	
-		while (Serial.available() > 0 && new_data == false) {
+
+		if (!Serial.available()) return;
+
+		unsigned long start_time = millis();
+		while (millis() - start_time <= HOLD_TIME) {
+			if (Serial.available() == 0) continue;
+
 			rc = Serial.read();
 
 			if (rc != endMarker) {
@@ -102,11 +107,12 @@ namespace SerialControl {
 				if (ndx >= MAX_ARG_LEN) {
 					ndx = MAX_ARG_LEN - 1;
 				}
-			}
-			else {
+			} else {
 				received_chars[ndx] = '\0'; // terminate the string
 				ndx = 0;
 				new_data = true;
+				
+				return;
 			}
 		}
 	}

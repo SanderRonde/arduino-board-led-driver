@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #define MAX_ARG_LEN 256
+#define HOLD_TIME 3000
 
 namespace SerialControl {
 	extern char received_chars[MAX_ARG_LEN];
