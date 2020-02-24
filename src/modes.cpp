@@ -91,9 +91,7 @@ namespace Modes {
 
 		void do_iteration() {
 			// Draw the background
-			for (int i = 0; i < NUM_LEDS; i++) {
-				leds[i] = bg_color;
-			}
+			fill_solid(leds, NUM_LEDS, bg_color);
 
 			// Draw the dots
 			for (int i = 0; i < MAX_DOTS; i++) {
