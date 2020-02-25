@@ -565,4 +565,42 @@ namespace Modes {
 			Serial.println("/ rainbow [update_time(ms)] [step] \\");
 		}
 	}
+
+	namespace Random {
+		unsigned int update_time = 0;
+		unsigned int block_size = 1;
+
+		void do_iteration() {
+			for (unsigned int i = 0; i < NUM_LEDS; ) {
+				CHSV color = CHSV(random(0, 255), 255, 255);
+
+				for (unsigned int j = 0; j < block_size && i < NUM_LEDS; j++, i++) {
+					leds[i] = color;
+				}
+			}
+			FastLED.show();
+		}
+
+		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			serial_override = NULL;
+			update_time = atoi(serial_data[2].c_str());
+			if (update_time == 0) {
+				mode_update_time = 1000;
+			} else {
+				mode_update_time = update_time;
+			}
+			block_size = atoi(serial_data[3].c_str());
+			if (block_size == 0) {
+				block_size = 1;
+			}
+
+			iterate_fn = do_iteration;
+			cur_mode = Modes::LED_MODE_RANDOM;
+
+		}
+
+		void help() {
+			Serial.println("/ rainbow [update_time(ms)] [block_size] \\");
+		}
+	}
 }

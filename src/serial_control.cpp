@@ -86,6 +86,8 @@ namespace SerialControl {
 			Modes::Flash::handle_serial(serial_data);
 		} else if (serial_data[1] == "rainbow") {
 			Modes::Rainbow::handle_serial(serial_data);
+		} else if (serial_data[1] == "random") {
+			Modes::Random::handle_serial(serial_data);
 		} else if (serial_data[1] == "leds") {
 			Serial.println(NUM_LEDS);
 		} else if (serial_data[1] == "help") {
