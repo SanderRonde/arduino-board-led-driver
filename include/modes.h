@@ -11,6 +11,7 @@ namespace Modes {
 		LED_MODE_FLASH,
 		LED_MODE_RAINBOW,
 		LED_MODE_RANDOM,
+		LED_MODE_BEATS,
 		LED_MODE_OFF
 	} led_mode_t;
 
@@ -24,6 +25,8 @@ namespace Modes {
 	extern void (*iterate_fn)(void);
 	extern void (*serial_override)(void);
 	extern unsigned long mode_update_time;
+	
+	extern bool force_update;
 
 	namespace Off {
 		extern const unsigned long update_time;
@@ -88,6 +91,12 @@ namespace Modes {
 	}
 
 	namespace Random {
+		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		
+		void help();
+	}
+	
+	namespace Beats {
 		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
 		
 		void help();

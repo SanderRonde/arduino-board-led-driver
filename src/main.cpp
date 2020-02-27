@@ -32,12 +32,12 @@ void loop() {
 	}
 
 	// If new data, iterate
-	if (SerialControl::new_data) {
+	if (Modes::force_update) {
 		// Do iterate function
 		Modes::iterate_fn();
 
 		// Reset new_data
-		SerialControl::new_data = false;
+		Modes::force_update = false;
 	} else if (Modes::mode_update_time == 0) {
 		// Do iterate function
 		Modes::iterate_fn();

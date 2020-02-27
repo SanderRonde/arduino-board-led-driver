@@ -62,6 +62,12 @@ namespace SerialControl {
 		}
 	}
 
+	void signal_read() {
+		new_data = false;
+		clear_char_buffers();
+		Modes::force_update = true;
+	}
+
 	void handle_serial() {
 		String serial_data[ARG_BLOCK_LEN];
 		int length = parse_serial(serial_data);
@@ -88,6 +94,8 @@ namespace SerialControl {
 			Modes::Rainbow::handle_serial(serial_data);
 		} else if (serial_data[1] == "random") {
 			Modes::Random::handle_serial(serial_data);
+		} else if (serial_data[1] == "beats") {
+			Modes::Beats::handle_serial(serial_data);
 		} else if (serial_data[1] == "leds") {
 			Serial.println(NUM_LEDS);
 		} else if (serial_data[1] == "help") {
@@ -99,7 +107,7 @@ namespace SerialControl {
 		Serial.println("ack");
 		Serial.println("ack");
 
-		clear_char_buffers();
+		signal_read();
 	}
 
 	byte ndx = 0;
@@ -140,3 +148,5 @@ namespace SerialControl {
 		}
 	}
 }
+
+// / beats 255 0 0 0 0 0 0 100 0 \

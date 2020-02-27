@@ -9,6 +9,8 @@
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
 #define MAX_FLASH_LEN 256
+#define BEAT_MAX_DURATION 200
+#define MAX_CONFIDENCE 0.7
 
 namespace Modes {
 	Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
@@ -16,6 +18,8 @@ namespace Modes {
 	void (*iterate_fn)(void) = NULL;
 	void (*serial_override)(void) = NULL;
 	unsigned long mode_update_time = 1000UL * 1UL;
+
+	bool force_update = true;
 
 	namespace Off {
 		const unsigned long update_time = 1000UL * 1UL;
@@ -601,6 +605,304 @@ namespace Modes {
 
 		void help() {
 			Serial.println("/ rainbow [update_time(ms)] [block_size] \\");
+		}
+
+	}
+	
+	namespace Beats {
+		typedef struct beat_struct {
+			unsigned long start;
+			unsigned long end;
+			int confidence;
+		} beat_struct_t;
+
+		// Pre-provided configs
+		CRGB background_color = CRGB::Black;
+		CRGB foreground_color = CRGB::Black;
+		CRGB progress_color = CRGB::Black;
+		bool progress_disabled = false;
+
+		// "runtime" configs
+		bool is_playing = false;
+		uint32_t duration = 0;
+		uint32_t play_start = 0;
+		int total_beats = 0;
+		beat_struct_t* beats = NULL;
+
+		// Runtime configs
+		uint32_t last_playing_time = 0;
+		int beat_run_index = 0;
+		
+		void do_iteration() {
+			// Draw background
+			fill_solid(leds, NUM_LEDS, background_color);
+
+			// Draw progress bar
+			if (!progress_disabled) {
+				if (is_playing) {
+					last_playing_time = play_start + millis();
+				}
+
+				float percentage_played;
+				if (last_playing_time) {
+					percentage_played = (float) last_playing_time / (float) duration;
+				} else {
+					percentage_played = 0;
+				}
+
+				int leds_amount = (int) ((float) NUM_LEDS * percentage_played);
+				fill_solid(leds, leds_amount, progress_color);
+			}
+
+			if (is_playing) {
+				unsigned long play_time = millis() - play_start;
+
+				while (play_time > beats[beat_run_index].end && beat_run_index < total_beats) {
+					beat_run_index++;
+				}
+
+				beat_struct_t current_beat = beats[beat_run_index];
+				unsigned long play_diff = play_time - current_beat.start;
+				if (play_diff >= 0) {
+					// Inside of the beat
+					float confidence_scale = (float) current_beat.confidence / (float) min(MAX_CONFIDENCE, current_beat.confidence);
+					unsigned long beat_duration = current_beat.end - current_beat.start;
+					float fade_scale = 1.0 - ((float) play_diff / (float) beat_duration);
+					
+					float brightness = confidence_scale * fade_scale;
+					float inverse_brightness = 1 - brightness;
+					CRGB flash_color = foreground_color.nscale8(brightness * 256);
+
+					for (int i = 0; i < NUM_LEDS; i++) {
+						leds[i].nscale8(inverse_brightness * 256);
+						leds[i] += flash_color;
+					}
+				} else {
+					// Not inside of the beat, don't draw it
+				}
+			}
+		}
+
+		const char START_MARKER = '/';
+		const char END_MARKER = '\n';
+
+		typedef enum SERIAL_STATE {
+			INITIAL,
+			B_RECEIVED,
+			PLAYSTATE,
+			PLAYSTART,
+			INPUT_DURATION,
+			BEATS_START,
+			BEATS_READING
+		} serial_state_t;
+
+		typedef enum BEAT_STRUCT_INDEX {
+			START,
+			DURATION,
+			CONFIDENCE
+		} beat_struct_index_t;
+		
+		void on_serial() {
+			Serial.print("Overriding ");
+					
+			int block_index = 0;
+			// Ignore the first 2 chars
+			int char_index = 2;
+
+			Serial.println("Staring");
+			char first_char = SerialControl::char_blocks[block_index][char_index++];
+			if (first_char != 'b') {
+				return;
+			}
+
+			char input_mode = SerialControl::char_blocks[block_index][char_index++];
+			if (input_mode == 'p') {
+				// Playmode
+				char play_mode = SerialControl::char_blocks[block_index][char_index++];
+				if (play_mode == '1') {
+					is_playing = true;
+				} else {
+					is_playing = false;
+				}
+				SerialControl::signal_read();
+				return;
+			}
+			if (input_mode == 's') {
+				// Start
+			}
+			if (input_mode == 'd') {
+				// Duration
+				
+			}
+
+			// Serial.print("Current char = ");
+			// Serial.println(rc);
+			// if (char_index >= ARG_BLOCK_LEN) {
+			// 	Serial.println("overflowing");
+			// 	block_index++;
+			// 	char_index = 0;
+			// 	if (SerialControl::char_blocks[block_index] == NULL) {
+			// 		Serial.println("Read beyond input string");
+			// 		SerialControl::clear_char_buffers();
+			// 		return;
+			// 	}
+			// }
+
+			// Serial.print("State is ");
+			// Serial.println(state);
+			// switch (state) {
+			// 	case SERIAL_STATE::INITIAL:
+			// 		if (rc != 'b') {
+			// 			// Not a beat one, cancel and hand over control to 
+			// 			// the original function
+			// 			SerialControl::ndx = index;
+			// 			SerialControl::recv_with_end_marker();
+			// 			return;
+			// 		}
+
+			// 		state = SERIAL_STATE::B_RECEIVED;
+			// 		break;
+			// 	case SERIAL_STATE::B_RECEIVED:
+			// 		if (rc == 'p') {
+			// 			state = SERIAL_STATE::PLAYSTATE;
+			// 			Serial.println("read ya boy p");
+			// 		} else if (rc == 's') {
+			// 			state = SERIAL_STATE::PLAYSTART;
+			// 		} else if (rc == 'b') {
+			// 			state = SERIAL_STATE::BEATS_START;
+
+			// 			// Starting to read beats, probably a good idea to clear the previous ones
+			// 			free(beats);
+			// 			beats = NULL;
+			// 		} else if (rc == 'd') {
+			// 			state = SERIAL_STATE::INPUT_DURATION;
+			// 		}
+			// 		Serial.println("Breaking");
+			// 		break;
+			// 	case 2:
+			// 		Serial.println("Inside of that case");
+			// 		if (rc == '1') {
+			// 			is_playing = true;
+			// 		} else {
+			// 			is_playing = false;
+			// 		}
+			// 		Serial.println("Set playstate");
+			// 		break;
+			// 	case SERIAL_STATE::PLAYSTART:
+			// 	case SERIAL_STATE::BEATS_START:
+			// 	case SERIAL_STATE::INPUT_DURATION:
+			// 		if (rc == ' ') {
+			// 			// Done reading it, convert to number now
+			// 			num_buf[num_buf_idx] = '\0';
+			// 			num_buf_idx = 0;
+
+			// 			char *end;
+			// 			unsigned long num = strtoul(num_buf, &end, 10);
+			// 			if (state == SERIAL_STATE::PLAYSTART) {
+			// 				play_start = num;
+			// 				done = true;
+			// 				beat_run_index = 0;
+			// 			} else if (state == SERIAL_STATE::INPUT_DURATION) {
+			// 				duration = num;
+			// 				done = true;
+			// 				last_playing_time = 0;
+			// 			} else {
+			// 				// Free any remaining beats
+			// 				if (beats) {
+			// 					free(beats);
+			// 					beats = NULL;
+			// 				}
+			// 				// Allocate them
+			// 				total_beats = num;
+			// 				beats = (beat_struct_t*) malloc(sizeof(beat_struct_t) * num);
+			// 				state = SERIAL_STATE::BEATS_READING;
+			// 				beat_index = 0;
+			// 				beat_run_index = 0;
+			// 			}
+			// 		} else {
+			// 			num_buf[num_buf_idx++] = rc;
+			// 		}
+			// 		break;
+			// 	case SERIAL_STATE::BEATS_READING:
+			// 		if (rc == ',' || rc == ' ') {
+			// 			// Done reading it, convert to number now
+			// 			num_buf[num_buf_idx] = '\0';
+			// 			num_buf_idx = 0;
+
+			// 			char *end;
+			// 			if (beat_struct_idx == BEAT_STRUCT_INDEX::START) {
+			// 				// Unsigned long start
+			// 				unsigned long start = strtoul(num_buf, &end, 10);
+			// 				beats[beat_index].start = start;
+
+			// 				beat_struct_idx = BEAT_STRUCT_INDEX::DURATION;
+			// 			} else if (beat_struct_idx == BEAT_STRUCT_INDEX::DURATION) {
+			// 				// Unsigned long duration, turned into end
+			// 				unsigned long duration = strtoul(num_buf, &end, 10);
+			// 				beats[beat_index].end = beats[beat_index].start + min(BEAT_MAX_DURATION, duration);
+
+			// 				beat_struct_idx = BEAT_STRUCT_INDEX::CONFIDENCE;
+			// 			} else if (beat_struct_idx == BEAT_STRUCT_INDEX::CONFIDENCE) {
+			// 				// int confidence
+			// 				int confidence = strtoimax(num_buf, &end, 10);
+			// 				beats[beat_index++].confidence = confidence;
+
+			// 				beat_struct_idx = BEAT_STRUCT_INDEX::START;
+			// 			}
+			// 			if (rc == ' ') {
+			// 				// This was the last one
+			// 				done = true;
+			// 			}
+			// 		} else {
+			// 			num_buf[num_buf_idx++] = rc;
+			// 		}
+			// 		break;
+			// }
+			
+			Serial.println("ack");
+			Serial.println("ack");
+			Serial.println("ack");
+			Serial.println("ack");
+			Serial.println("ack");
+			Serial.println("That one ack");
+
+			SerialControl::signal_read();
+		}
+
+		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+			FastLED.showColor(CRGB::Black);
+
+			foreground_color = CRGB(
+				atoi(serial_data[2].c_str()),
+				atoi(serial_data[3].c_str()),
+				atoi(serial_data[4].c_str())
+			);
+
+			background_color = CRGB(
+				atoi(serial_data[5].c_str()),
+				atoi(serial_data[6].c_str()),
+				atoi(serial_data[7].c_str())
+			);
+
+			progress_color = CRGB(
+				atoi(serial_data[8].c_str()),
+				atoi(serial_data[9].c_str()),
+				atoi(serial_data[10].c_str())
+			);
+			if (progress_color.r == 0 && progress_color.g == 0 && progress_color.b == 0) {
+				progress_disabled = true;
+			} else {
+				progress_disabled = false;
+			}
+
+			iterate_fn = do_iteration;
+			mode_update_time = 0;
+			cur_mode = Modes::LED_MODE_BEATS;
+			serial_override = on_serial;
+		}
+
+		void help() {
+			Serial.println("/ beats [r] [g] [b] [bg_r] [bg_g] [bg_b] [prog_r] [prog_g] [prog_b] \\");
 		}
 	}
 }
