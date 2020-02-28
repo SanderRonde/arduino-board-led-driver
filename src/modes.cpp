@@ -644,7 +644,7 @@ namespace Modes {
 				}
 
 				float percentage_played;
-				if (last_playing_time) {
+				if (last_playing_time && duration) {
 					percentage_played = (float) last_playing_time / (float) duration;
 				} else {
 					percentage_played = 0;
