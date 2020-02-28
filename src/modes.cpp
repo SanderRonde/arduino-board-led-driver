@@ -95,7 +95,9 @@ namespace Modes {
 
 		void do_iteration() {
 			// Draw the background
-			fill_solid(leds, NUM_LEDS, bg_color);
+			for (int i = 0; i < NUM_LEDS; i++) {
+				leds[i] = bg_color;
+			}
 
 			// Draw the dots
 			for (int i = 0; i < MAX_DOTS; i++) {
@@ -635,7 +637,9 @@ namespace Modes {
 		
 		void do_iteration() {
 			// Draw background
-			fill_solid(leds, NUM_LEDS, background_color);
+			for (int i = 0; i < NUM_LEDS; i++) {
+				leds[i] = background_color;
+			}
 
 			// Draw progress bar
 			if (!progress_disabled) {
@@ -651,7 +655,9 @@ namespace Modes {
 				}
 
 				int leds_amount = (int) ((float) NUM_LEDS * percentage_played);
-				fill_solid(leds, leds_amount, progress_color);
+				for (int i = 0; i < leds_amount; i++) {
+					leds[i] = progress_color;
+				}
 			}
 
 			if (is_playing) {
