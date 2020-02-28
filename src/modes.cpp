@@ -717,7 +717,6 @@ namespace Modes {
 			// Ignore the first 2 chars
 			int char_index = 2;
 
-			Serial.println("Staring");
 			char first_char = SerialControl::char_blocks[block_index][char_index++];
 			if (first_char != 'b') {
 				return;
