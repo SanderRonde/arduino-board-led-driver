@@ -687,6 +687,8 @@ namespace Modes {
 					// Not inside of the beat, don't draw it
 				}
 			}
+
+			FastLED.show();
 		}
 
 		const char START_MARKER = '/';
