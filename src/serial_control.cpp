@@ -110,12 +110,12 @@ namespace SerialControl {
 		signal_read();
 	}
 
-	byte ndx = 0;
 	void recv_with_end_marker() {
 		if (!Serial.available()) return;
 
 		char rc;
 		char endMarker = '\n';
+		int char_index = 0;
 		int block_index = 0;
 
 		unsigned long start_time = millis();
@@ -129,9 +129,9 @@ namespace SerialControl {
 			}
 
 			if (rc != endMarker) {
-				char_blocks[block_index][ndx] = rc;
-				ndx++;
-				if (ndx >= ARG_BLOCK_LEN) {
+				char_blocks[block_index][char_index] = rc;
+				char_index++;
+				if (char_index >= ARG_BLOCK_LEN) {
 					block_index++;
 					if (block_index >= MAX_ARG_BLOCKS) {
 						Serial.println("Serial overflow");
@@ -139,8 +139,7 @@ namespace SerialControl {
 					}
 				}
 			} else {
-				char_blocks[block_index][ndx] = '\0'; // terminate the string
-				ndx = 0;
+				char_blocks[block_index][char_index] = '\0'; // terminate the string
 				new_data = true;
 				
 				return;

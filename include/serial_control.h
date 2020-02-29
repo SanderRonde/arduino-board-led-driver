@@ -16,6 +16,5 @@ namespace SerialControl {
 	void clear_char_buffers();
 	void signal_read();
 
-	extern byte ndx;
 	void recv_with_end_marker();
 }
