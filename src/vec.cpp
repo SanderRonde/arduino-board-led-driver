@@ -1,5 +1,6 @@
+#include "../include/vec.h"
+
 #include <stdlib.h>
-#include <vec.h>
 
 namespace Vec {
 	template<typename vec_type>

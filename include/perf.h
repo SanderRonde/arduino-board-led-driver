@@ -1,4 +1,4 @@
-#include <globals.h>
+#include "globals.h"
 
 namespace Perf {
 	int section_define(const char* name);

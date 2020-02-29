@@ -1,4 +1,4 @@
-#include <globals.h>
+#include "../include/globals.h"
 
 #define MAX_PERF_SECTIONS 14
 #define ARR_INDICES 500

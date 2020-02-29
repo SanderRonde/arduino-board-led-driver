@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
+#include "globals.h"
 
 #define ARG_BLOCK_LEN 512
 #define MAX_ARG_BLOCKS 32

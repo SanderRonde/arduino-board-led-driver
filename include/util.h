@@ -1,4 +1,4 @@
-#include <modes.h>
+#include "modes.h"
 
 namespace Util {
 	void apply_change(Modes::dir_t dir, long *value, unsigned int step, long cap);

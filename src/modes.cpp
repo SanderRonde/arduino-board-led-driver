@@ -1,9 +1,8 @@
-#include <serial_control.h>
-#include <Arduino.h>
-#include <globals.h>
-#include <power.h>
-#include <modes.h>
-#include <util.h>
+#include "../include/serial_control.h"
+#include "../include/globals.h"
+#include "../include/power.h"
+#include "../include/modes.h"
+#include "../include/util.h"
 
 #define MAX_DOTS 20
 #define MAX_SPLIT_COLORS 10
@@ -684,6 +683,8 @@ namespace Modes {
 							leds[i].nscale8(inverse_brightness * 256);
 							leds[i] += flash_color;
 						}
+
+						Serial.println("Beat!");
 					} else {
 						// Not inside of the beat, don't draw it
 					}
@@ -712,7 +713,7 @@ namespace Modes {
 			CONFIDENCE
 		} beat_struct_index_t;
 
-		void increment_char_index(int* block_index, int* char_index) {
+		void increment_char_index(int* block_index, int* char_index, int* err) {
 			*char_index = *char_index + 1;
 			if (*char_index >= ARG_BLOCK_LEN) {
 				*char_index = 0;
@@ -720,15 +721,18 @@ namespace Modes {
 				if (*block_index >= MAX_ARG_BLOCKS) {
 					printf("ERR: Max blocks exceeded\n");
 					*block_index = 0;
+					*err = 1;
 				}
 				if (SerialControl::char_blocks[*block_index] == NULL) {
-					printf("ERR: Reading from uninitialized block\n");
+					printf("ERR: Reading from uninitialized block at %d, %d\n",
+						*block_index, *char_index);
 					*block_index = 0;
+					*err = 1;
 				}
 			}
 		}
 
-		unsigned long read_num(int* block_index, int* char_index) {
+		unsigned long read_num(int* block_index, int* char_index, int* err) {
 			char num_buf[ARG_BLOCK_LEN];
 			int index = 0;
 
@@ -737,14 +741,14 @@ namespace Modes {
 			char c = SerialControl::char_blocks[*block_index][*char_index];
 			if (c == ',' || c == ' ') return 0;
 
-			increment_char_index(block_index, char_index);
+			increment_char_index(block_index, char_index, err);
 
 			while (c != ',' && c != ' ') {
 				num_buf[index++] = c;
 
 				c = SerialControl::char_blocks[*block_index][*char_index];
 
-				increment_char_index(block_index, char_index);
+				increment_char_index(block_index, char_index, err);
 			}
 
 			num_buf[index] = '\0';
@@ -770,147 +774,58 @@ namespace Modes {
 				} else {
 					is_playing = false;
 				}
-				SerialControl::signal_read();
+			} else if (input_mode == 's') {
+				// Start
+				int err = 0;
+				unsigned long num = read_num(&block_index, &char_index, &err);
+				if (err) return SerialControl::signal_read();;
+				play_start = num;
+				beat_run_index = 0;
+			} else if (input_mode == 'd') {
+				// Duration
+				int err = 0;
+				unsigned long num = read_num(&block_index, &char_index, &err);
+				if (err) return SerialControl::signal_read();;
+				duration = num;
+				last_playing_time = 0;
+			} else if (input_mode == 'b') {
+				// Free previous one
+				if (beats != NULL) {
+					free(beats);
+				}
+
+				// Allocate array
+				int err = 0;
+				total_beats = (int) read_num(&block_index, &char_index, &err);
+				if (err) return SerialControl::signal_read();;
+				beats = (beat_struct_t*) malloc(sizeof(beat_struct_t) * total_beats);
+				beat_run_index = 0;
+
+				Serial.print("Total beats = ");
+				Serial.println(total_beats);
+
+				for (int i = 0; i < total_beats; i++) {
+					beats[i].start = read_num(&block_index, &char_index, &err);
+					if (err) return SerialControl::signal_read();;
+
+					unsigned long duration = read_num(&block_index, &char_index, &err);
+					if (err) return SerialControl::signal_read();;
+					beats[i].end = beats[i].start + min(BEAT_MAX_DURATION, duration);
+
+					int confidence = (int) read_num(&block_index, &char_index, &err);
+					if (err) return SerialControl::signal_read();;
+					beats[i].confidence = confidence;
+				}
+			} else {
+				// No match, return
 				return;
 			}
-			if (input_mode == 's') {
-				// Start
-			}
-			if (input_mode == 'd') {
-				// Duration
-				
-			}
-
-			// Serial.print("Current char = ");
-			// Serial.println(rc);
-			// if (char_index >= ARG_BLOCK_LEN) {
-			// 	Serial.println("overflowing");
-			// 	block_index++;
-			// 	char_index = 0;
-			// 	if (SerialControl::char_blocks[block_index] == NULL) {
-			// 		Serial.println("Read beyond input string");
-			// 		SerialControl::clear_char_buffers();
-			// 		return;
-			// 	}
-			// }
-
-			// Serial.print("State is ");
-			// Serial.println(state);
-			// switch (state) {
-			// 	case SERIAL_STATE::INITIAL:
-			// 		if (rc != 'b') {
-			// 			// Not a beat one, cancel and hand over control to 
-			// 			// the original function
-			// 			SerialControl::ndx = index;
-			// 			SerialControl::recv_with_end_marker();
-			// 			return;
-			// 		}
-
-			// 		state = SERIAL_STATE::B_RECEIVED;
-			// 		break;
-			// 	case SERIAL_STATE::B_RECEIVED:
-			// 		if (rc == 'p') {
-			// 			state = SERIAL_STATE::PLAYSTATE;
-			// 			Serial.println("read ya boy p");
-			// 		} else if (rc == 's') {
-			// 			state = SERIAL_STATE::PLAYSTART;
-			// 		} else if (rc == 'b') {
-			// 			state = SERIAL_STATE::BEATS_START;
-
-			// 			// Starting to read beats, probably a good idea to clear the previous ones
-			// 			free(beats);
-			// 			beats = NULL;
-			// 		} else if (rc == 'd') {
-			// 			state = SERIAL_STATE::INPUT_DURATION;
-			// 		}
-			// 		Serial.println("Breaking");
-			// 		break;
-			// 	case 2:
-			// 		Serial.println("Inside of that case");
-			// 		if (rc == '1') {
-			// 			is_playing = true;
-			// 		} else {
-			// 			is_playing = false;
-			// 		}
-			// 		Serial.println("Set playstate");
-			// 		break;
-			// 	case SERIAL_STATE::PLAYSTART:
-			// 	case SERIAL_STATE::BEATS_START:
-			// 	case SERIAL_STATE::INPUT_DURATION:
-			// 		if (rc == ' ') {
-			// 			// Done reading it, convert to number now
-			// 			num_buf[num_buf_idx] = '\0';
-			// 			num_buf_idx = 0;
-
-			// 			char *end;
-			// 			unsigned long num = strtoul(num_buf, &end, 10);
-			// 			if (state == SERIAL_STATE::PLAYSTART) {
-			// 				play_start = num;
-			// 				done = true;
-			// 				beat_run_index = 0;
-			// 			} else if (state == SERIAL_STATE::INPUT_DURATION) {
-			// 				duration = num;
-			// 				done = true;
-			// 				last_playing_time = 0;
-			// 			} else {
-			// 				// Free any remaining beats
-			// 				if (beats) {
-			// 					free(beats);
-			// 					beats = NULL;
-			// 				}
-			// 				// Allocate them
-			// 				total_beats = num;
-			// 				beats = (beat_struct_t*) malloc(sizeof(beat_struct_t) * num);
-			// 				state = SERIAL_STATE::BEATS_READING;
-			// 				beat_index = 0;
-			// 				beat_run_index = 0;
-			// 			}
-			// 		} else {
-			// 			num_buf[num_buf_idx++] = rc;
-			// 		}
-			// 		break;
-			// 	case SERIAL_STATE::BEATS_READING:
-			// 		if (rc == ',' || rc == ' ') {
-			// 			// Done reading it, convert to number now
-			// 			num_buf[num_buf_idx] = '\0';
-			// 			num_buf_idx = 0;
-
-			// 			char *end;
-			// 			if (beat_struct_idx == BEAT_STRUCT_INDEX::START) {
-			// 				// Unsigned long start
-			// 				unsigned long start = strtoul(num_buf, &end, 10);
-			// 				beats[beat_index].start = start;
-
-			// 				beat_struct_idx = BEAT_STRUCT_INDEX::DURATION;
-			// 			} else if (beat_struct_idx == BEAT_STRUCT_INDEX::DURATION) {
-			// 				// Unsigned long duration, turned into end
-			// 				unsigned long duration = strtoul(num_buf, &end, 10);
-			// 				beats[beat_index].end = beats[beat_index].start + min(BEAT_MAX_DURATION, duration);
-
-			// 				beat_struct_idx = BEAT_STRUCT_INDEX::CONFIDENCE;
-			// 			} else if (beat_struct_idx == BEAT_STRUCT_INDEX::CONFIDENCE) {
-			// 				// int confidence
-			// 				int confidence = strtoimax(num_buf, &end, 10);
-			// 				beats[beat_index++].confidence = confidence;
-
-			// 				beat_struct_idx = BEAT_STRUCT_INDEX::START;
-			// 			}
-			// 			if (rc == ' ') {
-			// 				// This was the last one
-			// 				done = true;
-			// 			}
-			// 		} else {
-			// 			num_buf[num_buf_idx++] = rc;
-			// 		}
-			// 		break;
-			// }
 			
 			Serial.println("ack");
 			Serial.println("ack");
 			Serial.println("ack");
 			Serial.println("ack");
-			Serial.println("ack");
-			Serial.println("That one ack");
+			Serial.println("ack-override");
 
 			SerialControl::signal_read();
 		}

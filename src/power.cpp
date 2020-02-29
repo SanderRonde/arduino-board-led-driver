@@ -1,5 +1,4 @@
-#include <Arduino.h>
-#include <globals.h>
+#include "../include/globals.h"
 
 #define RED_POWER_DRAW 16
 #define GREEN_POWER_DRAW 11

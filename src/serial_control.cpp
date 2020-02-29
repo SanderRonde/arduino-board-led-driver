@@ -1,7 +1,6 @@
-#include <serial_control.h>
-#include <Arduino.h>
-#include <globals.h>
-#include <modes.h>
+#include "../include/serial_control.h"
+#include "../include/globals.h"
+#include "../include/modes.h"
 
 #include <malloc.h>
 #include <stdlib.h>
@@ -121,7 +120,7 @@ namespace SerialControl {
 		} else if (WORD_EQ(words, 1, "random")) {
 			Modes::Random::handle_serial(words);
 		} else if (WORD_EQ(words, 1, "beats")) {
-			Modes::Beats::handle_serial(words);
+			Modes::Beats::handle_serial(words); 
 		} else if (WORD_EQ(words, 1, "leds")) {
 			Serial.println(NUM_LEDS);
 		} else if (WORD_EQ(words, 1, "help")) {
