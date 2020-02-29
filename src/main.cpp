@@ -1,11 +1,15 @@
-#include <serial_control.h>
-#include <Arduino.h>
-#include <globals.h>
-#include <modes.h>
+#define MOCK 1
+#include "../include/serial_control.h"
+#include "../include/globals.h"
+#include "../include/modes.h"
 
 void setup() {
 	Serial.begin(115200);
-	FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+	#ifndef MOCK
+	FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS, 0);
+	#else
+	FastLED.addLeds(leds, NUM_LEDS, 0);
+	#endif
 	while (!Serial) { }
 
 	randomSeed(analogRead(0));

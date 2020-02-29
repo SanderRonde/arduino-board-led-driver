@@ -1,7 +1,12 @@
 #pragma once
 
-#include <FastLED.h>
+#ifndef MOCK
 #include <Arduino.h>
+#include <FastLED.h>
+#else
+#include "mock-fastled.h"
+#include "mock-arduino.h"
+#endif
 
 #define LED_PIN 7
 #define LEDS_PER_M 60
