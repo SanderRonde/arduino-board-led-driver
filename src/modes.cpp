@@ -876,25 +876,25 @@ namespace Modes {
 			SerialControl::signal_read();
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			FastLED.showColor(CRGB::Black);
 
 			foreground_color = CRGB(
-				atoi(serial_data[2].c_str()),
-				atoi(serial_data[3].c_str()),
-				atoi(serial_data[4].c_str())
+				atoi(words->text[2]),
+				atoi(words->text[3]),
+				atoi(words->text[4])
 			);
 
 			background_color = CRGB(
-				atoi(serial_data[5].c_str()),
-				atoi(serial_data[6].c_str()),
-				atoi(serial_data[7].c_str())
+				atoi(words->text[5]),
+				atoi(words->text[6]),
+				atoi(words->text[7])
 			);
 
 			progress_color = CRGB(
-				atoi(serial_data[8].c_str()),
-				atoi(serial_data[9].c_str()),
-				atoi(serial_data[10].c_str())
+				atoi(words->text[8]),
+				atoi(words->text[9]),
+				atoi(words->text[10])
 			);
 			if (progress_color.r == 0 && progress_color.g == 0 && progress_color.b == 0) {
 				progress_disabled = true;
