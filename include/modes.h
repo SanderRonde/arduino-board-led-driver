@@ -33,7 +33,7 @@ namespace Modes {
 
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 
 		void help();
 	}
@@ -41,7 +41,7 @@ namespace Modes {
 	namespace Solid {
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 
 		void help();
 	}
@@ -49,7 +49,7 @@ namespace Modes {
 	namespace Dot {
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 
 		void help();
 	}
@@ -57,7 +57,7 @@ namespace Modes {
 	namespace Split {
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 		
 		void help();
 	}
@@ -65,7 +65,7 @@ namespace Modes {
 	namespace Pattern {
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 
 		void help();
 	}
@@ -73,32 +73,32 @@ namespace Modes {
 	namespace Prime {
 		void do_iteration();
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 		
 		void help();
 	}
 
 	namespace Flash {
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 		
 		void help();
 	}
 
 	namespace Rainbow {
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 		
 		void help();
 	}
 
 	namespace Random {
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
+		void handle_serial(words_t* words);
 		
 		void help();
 	}
 	
 	namespace Beats {
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]);
-		
+		void handle_serial(words_t* words);
+
 		void help();
 	}
 }

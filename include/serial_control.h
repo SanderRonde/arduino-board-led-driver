@@ -1,11 +1,30 @@
 #pragma once
 
-#include <string.h>
 #include <Arduino.h>
 
 #define ARG_BLOCK_LEN 512
 #define MAX_ARG_BLOCKS 32
 #define HOLD_TIME 3000
+
+#define MAX_WORD_LEN 32
+#define MAX_WORDS 32
+
+#define WORD_EQ(words, index, expected) strcmp(words->text[index], expected) == 0
+
+typedef struct words {
+	char text[MAX_WORD_LEN][MAX_WORDS];
+	int num_words;
+
+	inline char* operator[] (uint8_t x) __attribute__((always_inline))
+	{
+		return text[x];
+	}
+
+	inline const char* operator[] (uint8_t x) const __attribute__((always_inline))
+	{
+		return text[x];
+	}
+} words_t;
 
 namespace SerialControl {
 	extern char* char_blocks[MAX_ARG_BLOCKS];

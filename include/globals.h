@@ -1,7 +1,6 @@
 #pragma once
 
 #include <FastLED.h>
-#include <string.h>
 #include <Arduino.h>
 
 #define LED_PIN 7

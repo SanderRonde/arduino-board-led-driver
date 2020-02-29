@@ -28,7 +28,7 @@ namespace Modes {
 			FastLED.showColor(CRGB::Black);
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
 			iterate_fn = do_iteration;
 			mode_update_time = update_time;
@@ -54,13 +54,13 @@ namespace Modes {
 			}
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			intensity = atoi(serial_data[2].c_str());
+			intensity = atoi(words->text[2]);
 			color = CRGB(
-				atoi(serial_data[3].c_str()),
-				atoi(serial_data[4].c_str()),
-				atoi(serial_data[5].c_str())
+				atoi(words->text[3]),
+				atoi(words->text[4]),
+				atoi(words->text[5])
 			);
 			scale = Power::get_scale(color);
 
@@ -126,35 +126,35 @@ namespace Modes {
 			}
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			intensity = atoi(serial_data[2].c_str());
+			intensity = atoi(words->text[2]);
 
 			// Set background color
 			bg_color = CRGB(
-				atoi(serial_data[3].c_str()),
-				atoi(serial_data[4].c_str()),
-				atoi(serial_data[5].c_str())
+				atoi(words->text[3]),
+				atoi(words->text[4]),
+				atoi(words->text[5])
 			);
 
 			// Parse the dots
 			int dot_index = 0;
-			for (int i = 6; i < ARG_BLOCK_LEN && serial_data[i].c_str()[0] != '\\'; i += 7) {
+			for (int i = 6; i < ARG_BLOCK_LEN && words->text[i][0] != '\\'; i += 7) {
 				dot_t* dot = &dots[dot_index];
 				// First get the size
-				dot->dot_size = atoi(serial_data[i].c_str());
+				dot->dot_size = atoi(words->text[i]);
 				// Then the speed
-				dot->dot_speed = atoi(serial_data[i + 1].c_str());
+				dot->dot_speed = atoi(words->text[i + 1]);
 				// Then the direction
-				dot->dir = atoi(serial_data[i + 2].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
+				dot->dir = atoi(words->text[i + 2]) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
 				// Then the position as a percentage
-				int pos_percent = atoi(serial_data[i + 3].c_str());
+				int pos_percent = atoi(words->text[i + 3]);
 				dot->dot_pos = (unsigned int)(((float)pos_percent * NUM_LEDS) / 100);
 				// Then the color
 				dot->dot_color = CRGB(
-					atoi(serial_data[i + 4].c_str()),
-					atoi(serial_data[i + 5].c_str()),
-					atoi(serial_data[i + 6].c_str())
+					atoi(words->text[i + 4]),
+					atoi(words->text[i + 5]),
+					atoi(words->text[i + 6])
 				);
 				dot_index++;
 			}
@@ -208,18 +208,18 @@ namespace Modes {
 			}
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			intensity = atoi(serial_data[2].c_str());
-			update_time = atoi(serial_data[3].c_str());
-			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
+			intensity = atoi(words->text[2]);
+			update_time = atoi(words->text[3]);
+			dir = atoi(words->text[4]) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
 			split_colors_len = 0;
 
-			for (int i = 5; i < ARG_BLOCK_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 5; i < ARG_BLOCK_LEN && words->text[i][0] != '\\'; i += 3) {
 				split_colors[split_colors_len++] = CRGB(
-					atoi(serial_data[i].c_str()),
-					atoi(serial_data[i + 1].c_str()),
-					atoi(serial_data[i + 2].c_str())	
+					atoi(words->text[i]),
+					atoi(words->text[i + 1]),
+					atoi(words->text[i + 2])	
 				);
 			}
 			
@@ -284,19 +284,19 @@ namespace Modes {
 			}
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			intensity = atoi(serial_data[2].c_str());
-			update_time = atoi(serial_data[3].c_str());
-			dir = atoi(serial_data[4].c_str()) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
-			block_size = atoi(serial_data[5].c_str());
+			intensity = atoi(words->text[2]);
+			update_time = atoi(words->text[3]);
+			dir = atoi(words->text[4]) == 0 ? DIR_BACKWARDS : DIR_FORWARDS;
+			block_size = atoi(words->text[5]);
 			pattern_len = 0;
 
-			for (int i = 6; i < ARG_BLOCK_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 6; i < ARG_BLOCK_LEN && words->text[i][0] != '\\'; i += 3) {
 				pattern_colors[pattern_len++] = CRGB(
-					atoi(serial_data[i].c_str()),
-					atoi(serial_data[i + 1].c_str()),
-					atoi(serial_data[i + 2].c_str())	
+					atoi(words->text[i]),
+					atoi(words->text[i + 1]),
+					atoi(words->text[i + 2])	
 				);
 			}
 			for (unsigned int i = 0; i < pattern_len; i++) {
@@ -348,7 +348,7 @@ namespace Modes {
 
 		void do_iteration() { }
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = override_serial;
 			FastLED.showColor(CRGB::Black);
 
@@ -459,19 +459,19 @@ namespace Modes {
 			}
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
 			color_index = 0;
 			flash_index = false;
 			last_loop_iter = millis();
-			intensity = atoi(serial_data[2].c_str());
-			update_time = atol(serial_data[3].c_str());
-			amount_per_strobe = atoi(serial_data[4].c_str());
-			if (strcmp(serial_data[5].c_str(), "jump") == 0) {
+			intensity = atoi(words->text[2]);
+			update_time = atol(words->text[3]);
+			amount_per_strobe = atoi(words->text[4]);
+			if (words->text[5] == "jump") {
 				flash_mode = FLASH_MODE_JUMP;
-			} else if (strcmp(serial_data[5].c_str(), "fade") == 0) {
+			} else if (words->text[5] == "fade") {
 				flash_mode = FLASH_MODE_FADE;
-			} else if (strcmp(serial_data[5].c_str(), "strobe") == 0) {
+			} else if (words->text[5] == "strobe") {
 				flash_mode = FLASH_MODE_STROBE;
 			} else {
 				Serial.println("Invalid mode");
@@ -479,11 +479,11 @@ namespace Modes {
 			}
 
 			flash_vec_len = 0;
-			for (int i = 6; i < ARG_BLOCK_LEN && serial_data[i].c_str()[0] != '\\'; i += 3) {
+			for (int i = 6; i < ARG_BLOCK_LEN && words->text[i][0] != '\\'; i += 3) {
 				flash_vec[flash_vec_len] = CRGB(
-					atoi(serial_data[i].c_str()),
-					atoi(serial_data[i + 1].c_str()),
-					atoi(serial_data[i + 2].c_str())
+					atoi(words->text[i]),
+					atoi(words->text[i + 1]),
+					atoi(words->text[i + 2])
 				);
 				scales[flash_vec_len] = Power::get_scale(flash_vec[flash_vec_len]);
 				flash_vec_len++;
@@ -547,15 +547,15 @@ namespace Modes {
 			Util::apply_change(Modes::DIR_FORWARDS, &offset, step);
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			update_time = atoi(serial_data[2].c_str());
+			update_time = atoi(words->text[2]);
 			if (update_time == 0) {
 				mode_update_time = 1000;
 			} else {
 				mode_update_time = update_time;
 			}
-			step = atoi(serial_data[3].c_str());
+			step = atoi(words->text[3]);
 			if (step == 0) {
 				step = 1;
 			}
@@ -587,15 +587,15 @@ namespace Modes {
 			FastLED.show();
 		}
 
-		void handle_serial(const String serial_data[ARG_BLOCK_LEN]) {
+		void handle_serial(words_t* words) {
 			serial_override = NULL;
-			update_time = atoi(serial_data[2].c_str());
+			update_time = atoi(words->text[2]);
 			if (update_time == 0) {
 				mode_update_time = 1000;
 			} else {
 				mode_update_time = update_time;
 			}
-			block_size = atoi(serial_data[3].c_str());
+			block_size = atoi(words->text[3]);
 			if (block_size == 0) {
 				block_size = 1;
 			}

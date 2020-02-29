@@ -3,50 +3,75 @@
 #include <globals.h>
 #include <modes.h>
 
+#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+extern char _end;
+extern "C" char *sbrk(int i);
+char *ramstart=(char *)0x20070000;
+char *ramend=(char *)0x20088000;
+
 namespace SerialControl {
 	char* char_blocks[MAX_ARG_BLOCKS];
 	boolean new_data = false;
 
-	int parse_serial(String data[ARG_BLOCK_LEN]) {
-		int data_index = 0;
-		String current_word = "";
+	words_t* parse_serial() {
+		words_t* words = (words_t*) malloc(sizeof(words_t));
+		words->num_words = 0;
+
+		int char_index = 0;
 
 		for (unsigned int i = 0; i < MAX_ARG_BLOCKS; i++) {
 			if (char_blocks[i] == NULL) break;
 			for (unsigned int j = 0; j < strnlen(char_blocks[i], ARG_BLOCK_LEN); j++) {
 				if (char_blocks[i][j] == ' ') {
-					data[data_index++] = current_word;
-					current_word = "";
+					words->text[words->num_words][char_index] = '\0';
+					words->num_words++;
+					char_index = 0;
+
+					if (words->num_words >= MAX_WORDS) {
+						Serial.println("ERR: Input exceeds max words");
+						return words;
+					}
 				} else {
-					current_word += char_blocks[i][j];
+					words->text[words->num_words][char_index] = char_blocks[i][j];
+					char_index++;
+
+					if (char_index >= MAX_WORD_LEN) {
+						Serial.println("ERR: Input exceeds max word length");
+						return words;
+					}
 				}
 			}
 		}
-		data[data_index++] = current_word;
-		data[data_index++] = "";
-		return data_index - 1;
+
+		words->text[words->num_words][char_index] = '\0';
+		words->num_words++;
+
+		return words;
 	}
 
-	bool checksum_serial(String serial_data[ARG_BLOCK_LEN], int length) {
-		return serial_data[0][0] == '/' && serial_data[length - 1][0] == '\\';
+	bool checksum_serial(words_t* words) {
+		return words->text[0][0] == '/' && words->text[words->num_words - 1][0] == '\\';
 	}
 
-	void get_help(String serial_data[ARG_BLOCK_LEN]) {
-		if (serial_data[2] == "off") {
+	void get_help(words_t* words) {
+		if (WORD_EQ(words, 2, "off")) {
 			Modes::Off::help();
-		} else if (serial_data[2] == "solid") {
+		} else if (WORD_EQ(words, 2, "solid")) {
 			Modes::Solid::help();
-		} else if (serial_data[2] == "dot") {
+		} else if (WORD_EQ(words, 2, "dot")) {
 			Modes::Dot::help();
-		} else if (serial_data[2] == "split") {
+		} else if (WORD_EQ(words, 2, "split")) {
 			Modes::Split::help();
-		} else if (serial_data[2] == "pattern") {
+		} else if (WORD_EQ(words, 2, "pattern")) {
 			Modes::Pattern::help();
-		} else if (serial_data[2] == "prime" ){
+		} else if (WORD_EQ(words, 2, "prime") ){
 			Modes::Prime::help();
-		} else if (serial_data[2] == "flash" ){
+		} else if (WORD_EQ(words, 2, "flash") ){
 			Modes::Flash::help();
-		} else if (serial_data[2] == "rainbow"){
+		} else if (WORD_EQ(words, 2, "rainbow")){
 			Modes::Rainbow::help();
 		} else {
 			Serial.println("Unkown help type, type: \"/ help [cmd] \\\"");
@@ -69,37 +94,38 @@ namespace SerialControl {
 	}
 
 	void handle_serial() {
-		String serial_data[ARG_BLOCK_LEN];
-		int length = parse_serial(serial_data);
+		words_t* words = parse_serial();
 
-		if (!checksum_serial(serial_data, length)) {
+		if (!checksum_serial(words)) {
+			free(words);
+			signal_read();
 			return;
 		}
 
-		if (serial_data[1] == "off") {
-			Modes::Off::handle_serial(serial_data);
-		} else if (serial_data[1] == "solid") {
-			Modes::Solid::handle_serial(serial_data);
-		} else if (serial_data[1] == "dot") {
-			Modes::Dot::handle_serial(serial_data);
-		} else if (serial_data[1] == "split") {
-			Modes::Split::handle_serial(serial_data);
-		} else if (serial_data[1] == "pattern") {
-			Modes::Pattern::handle_serial(serial_data);
-		} else if (serial_data[1] == "prime" ){
-			Modes::Prime::handle_serial(serial_data);
-		} else if (serial_data[1] == "flash" ){
-			Modes::Flash::handle_serial(serial_data);
-		} else if (serial_data[1] == "rainbow") {
-			Modes::Rainbow::handle_serial(serial_data);
-		} else if (serial_data[1] == "random") {
-			Modes::Random::handle_serial(serial_data);
-		} else if (serial_data[1] == "beats") {
-			Modes::Beats::handle_serial(serial_data);
-		} else if (serial_data[1] == "leds") {
+		if (WORD_EQ(words, 1, "off")) {
+			Modes::Off::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "solid")) {
+			Modes::Solid::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "dot")) {
+			Modes::Dot::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "split")) {
+			Modes::Split::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "pattern")) {
+			Modes::Pattern::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "prime") ){
+			Modes::Prime::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "flash") ){
+			Modes::Flash::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "rainbow")) {
+			Modes::Rainbow::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "random")) {
+			Modes::Random::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "beats")) {
+			Modes::Beats::handle_serial(words);
+		} else if (WORD_EQ(words, 1, "leds")) {
 			Serial.println(NUM_LEDS);
-		} else if (serial_data[1] == "help") {
-			get_help(serial_data);
+		} else if (WORD_EQ(words, 1, "help")) {
+			get_help(words);
 		}
 		Serial.println("ack");
 		Serial.println("ack");
@@ -108,6 +134,7 @@ namespace SerialControl {
 		Serial.println("ack");
 
 		signal_read();
+		free(words);
 	}
 
 	void recv_with_end_marker() {
@@ -148,5 +175,3 @@ namespace SerialControl {
 		}
 	}
 }
-
-// / beats 255 0 0 0 0 0 0 100 0 \
