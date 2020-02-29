@@ -709,10 +709,47 @@ namespace Modes {
 			DURATION,
 			CONFIDENCE
 		} beat_struct_index_t;
+
+		void increment_char_index(int* block_index, int* char_index) {
+			*char_index = *char_index + 1;
+			if (*char_index >= ARG_BLOCK_LEN) {
+				*char_index = 0;
+				*block_index = *block_index + 1;
+				if (*block_index >= MAX_ARG_BLOCKS) {
+					printf("ERR: Max blocks exceeded\n");
+					*block_index = 0;
+				}
+				if (SerialControl::char_blocks[*block_index] == NULL) {
+					printf("ERR: Reading from uninitialized block\n");
+					*block_index = 0;
+				}
+			}
+		}
+
+		unsigned long read_num(int* block_index, int* char_index) {
+			char num_buf[ARG_BLOCK_LEN];
+			int index = 0;
+
+			if (*block_index >= MAX_ARG_BLOCKS) return 0;
+			
+			char c = SerialControl::char_blocks[*block_index][*char_index];
+			if (c == ',' || c == ' ') return 0;
+
+			increment_char_index(block_index, char_index);
+
+			while (c != ',' && c != ' ') {
+				num_buf[index++] = c;
+
+				c = SerialControl::char_blocks[*block_index][*char_index];
+
+				increment_char_index(block_index, char_index);
+			}
+
+			num_buf[index] = '\0';
+			return strtoul(num_buf, NULL, 10);
+		}
 		
 		void on_serial() {
-			Serial.print("Overriding ");
-					
 			int block_index = 0;
 			// Ignore the first 2 chars
 			int char_index = 2;
