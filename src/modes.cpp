@@ -467,11 +467,11 @@ namespace Modes {
 			intensity = atoi(words->text[2]);
 			update_time = atol(words->text[3]);
 			amount_per_strobe = atoi(words->text[4]);
-			if (words->text[5] == "jump") {
+			if (WORD_EQ(words, 1, "jump")) {
 				flash_mode = FLASH_MODE_JUMP;
-			} else if (words->text[5] == "fade") {
+			} else if (WORD_EQ(words, 1, "fade")) {
 				flash_mode = FLASH_MODE_FADE;
-			} else if (words->text[5] == "strobe") {
+			} else if (WORD_EQ(words, 1, "strobe")) {
 				flash_mode = FLASH_MODE_STROBE;
 			} else {
 				Serial.println("Invalid mode");
