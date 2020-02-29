@@ -133,6 +133,7 @@ namespace SerialControl {
 				char_index++;
 				if (char_index >= ARG_BLOCK_LEN) {
 					block_index++;
+					char_index = 0;
 					if (block_index >= MAX_ARG_BLOCKS) {
 						Serial.println("Serial overflow");
 						return;
