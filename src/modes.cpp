@@ -667,24 +667,26 @@ namespace Modes {
 					beat_run_index++;
 				}
 
-				beat_struct_t current_beat = beats[beat_run_index];
-				unsigned long play_diff = play_time - current_beat.start;
-				if (play_diff >= 0) {
-					// Inside of the beat
-					float confidence_scale = (float) current_beat.confidence / (float) min(MAX_CONFIDENCE, current_beat.confidence);
-					unsigned long beat_duration = current_beat.end - current_beat.start;
-					float fade_scale = 1.0 - ((float) play_diff / (float) beat_duration);
-					
-					float brightness = confidence_scale * fade_scale;
-					float inverse_brightness = 1 - brightness;
-					CRGB flash_color = foreground_color.nscale8(brightness * 256);
+				if (beat_run_index < total_beats) {
+					beat_struct_t current_beat = beats[beat_run_index];
+					unsigned long play_diff = play_time - current_beat.start;
+					if (play_diff >= 0) {
+						// Inside of the beat
+						float confidence_scale = (float) current_beat.confidence / (float) min(MAX_CONFIDENCE, current_beat.confidence);
+						unsigned long beat_duration = current_beat.end - current_beat.start;
+						float fade_scale = 1.0 - ((float) play_diff / (float) beat_duration);
+						
+						float brightness = confidence_scale * fade_scale;
+						float inverse_brightness = 1 - brightness;
+						CRGB flash_color = foreground_color.nscale8(brightness * 256);
 
-					for (int i = 0; i < NUM_LEDS; i++) {
-						leds[i].nscale8(inverse_brightness * 256);
-						leds[i] += flash_color;
+						for (int i = 0; i < NUM_LEDS; i++) {
+							leds[i].nscale8(inverse_brightness * 256);
+							leds[i] += flash_color;
+						}
+					} else {
+						// Not inside of the beat, don't draw it
 					}
-				} else {
-					// Not inside of the beat, don't draw it
 				}
 			}
 
