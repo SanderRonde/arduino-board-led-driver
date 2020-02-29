@@ -119,7 +119,7 @@ namespace SerialControl {
 		int block_index = 0;
 
 		unsigned long start_time = millis();
-		while (millis() - start_time <= HOLD_TIME) {
+		while (millis() - start_time <= HOLD_TIME || Serial.available()) {
 			if (Serial.available() == 0) continue;
 
 			rc = Serial.read();
