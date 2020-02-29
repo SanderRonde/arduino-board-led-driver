@@ -644,7 +644,7 @@ namespace Modes {
 			// Draw progress bar
 			if (!progress_disabled) {
 				if (is_playing) {
-					last_playing_time = play_start + millis();
+					last_playing_time = millis() - play_start;
 				}
 
 				float percentage_played;
