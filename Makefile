@@ -20,5 +20,5 @@ SRCFILES := $(MAIN_SRCFILES) $(MOCK_SRCFILES)
 mkdir:
 	$(MKDIR_P) $(OUT_DIR)
 
-compile: mkdir
+build: mkdir
 	$(COMPILER) $(SRCFILES) $(FLAGS) -o $(OUT_FILE) $(LIBS)
