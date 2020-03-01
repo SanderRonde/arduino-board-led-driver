@@ -56,16 +56,16 @@ void FastLedClass::addLeds(struct CRGB *data, int nLedsOrOffset, int nLedsIfOffs
 }
 void FastLedClass::showColor(const struct CRGB color) {
 	for (int i = 0; i < strip_index; i++) {
-		for (int j = 0; j < strips[strip_index].length; j++) {
-			strips[strip_index].strip[strips[strip_index].offset + j] = color;
+		for (int j = 0; j < strips[i].length; j++) {
+			strips[i].strip[strips[i].offset + j] = color;
 		}
 	}
 }
 void FastLedClass::showColor(const struct CRGB color, unsigned int intensity) {
 	showColor(color);
 	for (int i = 0; i < strip_index; i++) {
-		for (int j = 0; j < strips[strip_index].length; j++) {
-			strips[strip_index].strip[strips[strip_index].offset + j].nscale8(intensity);
+		for (int j = 0; j < strips[i].length; j++) {
+			strips[i].strip[strips[i].offset + j].nscale8(intensity);
 		}
 	}
 }
@@ -74,8 +74,8 @@ void FastLedClass::show() {
 }
 void FastLedClass::show(int scale) {
 	for (int i = 0; i < strip_index; i++) {
-		for (int j = 0; j < strips[strip_index].length; j++) {
-			strips[strip_index].strip[strips[strip_index].offset + j].nscale8(scale);
+		for (int j = 0; j < strips[i].length; j++) {
+			strips[i].strip[strips[i].offset + j].nscale8(scale);
 		}
 	}
 }
