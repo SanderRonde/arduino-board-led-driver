@@ -1,7 +1,7 @@
 COMPILER := gcc
 MKDIR_P = mkdir -p
 DEBUG_FLAGS := -g -ggdb
-FLAGS := -DMOCK=1 $(DEBUG_FLAGS)
+FLAGS := -DMOCK=1 -Wall $(DEBUG_FLAGS)
 LIBS := -lstdc++
 
 MAIN_SRCFILES := \
