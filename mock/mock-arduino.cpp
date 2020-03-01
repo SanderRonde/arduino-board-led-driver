@@ -1,4 +1,5 @@
 #include "../include/mock-arduino.h"
+#include "../include/mock-main.h"
 #include <sys/time.h>
 #include <unistd.h>
 #include <math.h>
@@ -10,7 +11,9 @@ int _read(int __fd, void *__buf, size_t __nbyte) {
 	return read(__fd, __buf, __nbyte);
 }
 void MockSerial::begin(const uint32_t dwBaudRate) {
-	printf("Serial began using baud rate %ul\n", dwBaudRate);
+	if (verbose) {
+		printf("[mock] serial started, using baud rate %ul\n", dwBaudRate);
+	}
 };
 size_t MockSerial::println(const char* x) {
 	printf("%s\n", x);

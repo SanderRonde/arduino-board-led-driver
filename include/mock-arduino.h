@@ -11,9 +11,6 @@
 #define min(a, b)   Min(a, b)
 #define SERIAL_BUF_SIZE 64
 
-void setup();
-void loop();
-
 uint32_t analogRead(uint32_t ulPin);
 
 class MockSerial {

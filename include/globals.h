@@ -6,6 +6,7 @@
 #else
 #include "mock-fastled.h"
 #include "mock-arduino.h"
+#include "mock-main.h"
 #endif
 
 #define LED_PIN 7
