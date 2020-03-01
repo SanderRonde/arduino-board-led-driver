@@ -1,4 +1,3 @@
-#define MOCK 1
 #include "../include/globals.h"
 #include "../include/modes.h"
 #include "../include/serial_control.h"
