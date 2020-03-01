@@ -22,3 +22,11 @@ mkdir:
 
 build: mkdir
 	$(COMPILER) $(SRCFILES) $(FLAGS) -o $(OUT_FILE) $(LIBS)
+
+run: build
+	$(OUT_DIR)/$(FILENAME)
+
+run-verbose: build
+	$(OUT_DIR)/$(FILENAME) -v
+
+run-v: run-verbose
