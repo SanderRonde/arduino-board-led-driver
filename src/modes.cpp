@@ -689,6 +689,7 @@ namespace Modes {
 
                         Serial.println("Beat!");
                     } else {
+                        Serial.println("No Beat!");
                         // Not inside of the beat, don't draw it
                     }
                 }

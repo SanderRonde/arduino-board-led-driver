@@ -43,7 +43,7 @@ unsigned long millis() {
     struct timeval tp;
     gettimeofday(&tp, NULL);
     unsigned long ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-    return ms;
+    return ms - time_subtract;
 }
 
 // Arduino functions
