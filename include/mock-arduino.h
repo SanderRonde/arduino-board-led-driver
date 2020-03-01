@@ -9,6 +9,8 @@
 #define boolean bool
 #define Min(a, b) (((a) < (b)) ? (a) : (b))
 #define min(a, b) Min(a, b)
+#define Max(a, b) (((a) > (b)) ? (a) : (b))
+#define max(a, b) Max(a, b)
 #define SERIAL_BUF_SIZE 64
 
 uint32_t analogRead(uint32_t ulPin);
@@ -35,6 +37,7 @@ class MockSerial {
 extern MockSerial Serial;
 
 extern void randomSeed(uint32_t dwSeed);
+unsigned long _millis();
 unsigned long millis();
 
 long int random(int min, int max);

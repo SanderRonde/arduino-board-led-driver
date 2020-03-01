@@ -38,12 +38,16 @@ char MockSerial::read() {
 
 MockSerial Serial;
 
-// Various system functions
-unsigned long millis() {
+unsigned long _millis() {
     struct timeval tp;
     gettimeofday(&tp, NULL);
     unsigned long ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
     return ms - time_subtract;
+}
+
+// Various system functions
+unsigned long millis() {
+    return _millis() - time_subtract;
 }
 
 // Arduino functions

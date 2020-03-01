@@ -7,7 +7,7 @@
 #define TIME_SHORT_ARG "-t"
 
 bool verbose = false;
-unsigned long time_subtract = 0;
+unsigned long time_subtract = _millis();
 
 bool inputAvailable() {
     struct timeval tv;
@@ -27,7 +27,7 @@ void read_io(int argc, char* argv[]) {
                 0) {
             verbose = true;
         } else if (strncmp(argv[i], TIME_SHORT_ARG, strlen(TIME_SHORT_ARG)) == 0) {
-            time_subtract = millis() - strtoul(argv[i + 1], NULL, 10);
+            time_subtract = _millis() - strtoul(argv[i + 1], NULL, 10);
         }
     }
 }
