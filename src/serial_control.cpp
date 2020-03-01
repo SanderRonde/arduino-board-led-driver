@@ -151,6 +151,8 @@ namespace SerialControl {
         while (millis() - start_time <= HOLD_TIME || Serial.available()) {
             if (Serial.available() == 0) continue;
 
+            start_time = millis();
+
             rc = Serial.read();
 
             if (char_blocks[block_index] == NULL) {
