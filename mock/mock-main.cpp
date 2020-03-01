@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (verbose) {
-        printf("[mock] using verbose. Booting...\n");
+        printf("[mock] using verbose. booting...\n");
     }
     unsigned long setup_start = millis();
     setup();
