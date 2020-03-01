@@ -1,5 +1,6 @@
 #include "../include/vec.h"
 
+#include <malloc.h>
 #include <stdlib.h>
 
 namespace Vec {
@@ -8,6 +9,7 @@ namespace Vec {
         Vec::vec_part_t<vec_type>* vec_part =
             (Vec::vec_part_t<vec_type>*)malloc(
                 sizeof(Vec::vec_part_t<vec_type>));
+        memset(vec_part, 0, sizeof(Vec::vec_part_t<vec_type>));
         vec_part->length = 0;
         vec_part->next = NULL;
         return vec_part;

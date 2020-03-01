@@ -15,7 +15,7 @@ uint32_t analogRead(uint32_t ulPin);
 
 class MockSerial {
    private:
-    char serial_buf[SERIAL_BUF_SIZE];
+    char serial_buf[SERIAL_BUF_SIZE] = { 0 };
     bool is_available = false;
 
     fd_set fds;

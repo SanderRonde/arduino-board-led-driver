@@ -156,6 +156,7 @@ namespace SerialControl {
             if (char_blocks[block_index] == NULL) {
                 char_blocks[block_index] =
                     (char*)malloc(sizeof(char) * ARG_BLOCK_LEN);
+                memset(char_blocks[block_index], 0, sizeof(char) * ARG_BLOCK_LEN);
             }
 
             if (rc != endMarker) {

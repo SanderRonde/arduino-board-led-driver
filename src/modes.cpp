@@ -655,8 +655,8 @@ namespace Modes {
             if (is_playing) {
                 unsigned long play_time = millis() - play_start;
 
-                while (play_time > beats[beat_run_index].end &&
-                       beat_run_index < total_beats) {
+                while (beat_run_index < total_beats &&
+                       play_time > beats[beat_run_index].end) {
                     beat_run_index++;
                 }
 
@@ -732,7 +732,7 @@ namespace Modes {
         }
 
         unsigned long read_num(int* block_index, int* char_index, int* err) {
-            char num_buf[ARG_BLOCK_LEN];
+            char num_buf[ARG_BLOCK_LEN] = { 0 };
             int index = 0;
 
             if (*block_index >= MAX_ARG_BLOCKS) return 0;
