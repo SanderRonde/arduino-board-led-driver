@@ -2,103 +2,100 @@
 #include "serial_control.h"
 
 namespace Modes {
-	typedef enum LED_MODE {
-		LED_MODE_DOT,
-		LED_MODE_SOLID,
-		LED_MODE_SPLIT,
-		LED_MODE_PATTERN,
-		LED_MODE_PRIMED,
-		LED_MODE_FLASH,
-		LED_MODE_RAINBOW,
-		LED_MODE_RANDOM,
-		LED_MODE_BEATS,
-		LED_MODE_OFF
-	} led_mode_t;
+    typedef enum LED_MODE {
+        LED_MODE_DOT,
+        LED_MODE_SOLID,
+        LED_MODE_SPLIT,
+        LED_MODE_PATTERN,
+        LED_MODE_PRIMED,
+        LED_MODE_FLASH,
+        LED_MODE_RAINBOW,
+        LED_MODE_RANDOM,
+        LED_MODE_BEATS,
+        LED_MODE_OFF
+    } led_mode_t;
 
-	typedef enum DIR {
-		DIR_BACKWARDS = 0,
-		DIR_FORWARDS = 1
-	} dir_t;
+    typedef enum DIR { DIR_BACKWARDS = 0, DIR_FORWARDS = 1 } dir_t;
 
-	extern Modes::led_mode_t cur_mode;
+    extern Modes::led_mode_t cur_mode;
 
-	extern void (*iterate_fn)(void);
-	extern void (*serial_override)(void);
-	extern unsigned long mode_update_time;
-	
-	extern bool force_update;
+    extern void (*iterate_fn)(void);
+    extern void (*serial_override)(void);
+    extern unsigned long mode_update_time;
 
-	namespace Off {
-		extern const unsigned long update_time;
+    extern bool force_update;
 
-		void do_iteration();
+    namespace Off {
+        extern const unsigned long update_time;
 
-		void handle_serial(words_t* words);
+        void do_iteration();
 
-		void help();
-	}
+        void handle_serial(words_t* words);
 
-	namespace Solid {
-		void do_iteration();
+        void help();
+    }  // namespace Off
 
-		void handle_serial(words_t* words);
+    namespace Solid {
+        void do_iteration();
 
-		void help();
-	}
+        void handle_serial(words_t* words);
 
-	namespace Dot {
-		void do_iteration();
+        void help();
+    }  // namespace Solid
 
-		void handle_serial(words_t* words);
+    namespace Dot {
+        void do_iteration();
 
-		void help();
-	}
+        void handle_serial(words_t* words);
 
-	namespace Split {
-		void do_iteration();
+        void help();
+    }  // namespace Dot
 
-		void handle_serial(words_t* words);
-		
-		void help();
-	}
+    namespace Split {
+        void do_iteration();
 
-	namespace Pattern {
-		void do_iteration();
+        void handle_serial(words_t* words);
 
-		void handle_serial(words_t* words);
+        void help();
+    }  // namespace Split
 
-		void help();
-	}
+    namespace Pattern {
+        void do_iteration();
 
-	namespace Prime {
-		void do_iteration();
+        void handle_serial(words_t* words);
 
-		void handle_serial(words_t* words);
-		
-		void help();
-	}
+        void help();
+    }  // namespace Pattern
 
-	namespace Flash {
-		void handle_serial(words_t* words);
-		
-		void help();
-	}
+    namespace Prime {
+        void do_iteration();
 
-	namespace Rainbow {
-		void handle_serial(words_t* words);
-		
-		void help();
-	}
+        void handle_serial(words_t* words);
 
-	namespace Random {
-		void handle_serial(words_t* words);
-		
-		void help();
-	}
-	
-	namespace Beats {
-		void handle_serial(words_t* words);
+        void help();
+    }  // namespace Prime
 
-		void help();
-	}
-}
+    namespace Flash {
+        void handle_serial(words_t* words);
+
+        void help();
+    }  // namespace Flash
+
+    namespace Rainbow {
+        void handle_serial(words_t* words);
+
+        void help();
+    }  // namespace Rainbow
+
+    namespace Random {
+        void handle_serial(words_t* words);
+
+        void help();
+    }  // namespace Random
+
+    namespace Beats {
+        void handle_serial(words_t* words);
+
+        void help();
+    }  // namespace Beats
+}  // namespace Modes

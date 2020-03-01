@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #else
-#include "mock-fastled.h"
 #include "mock-arduino.h"
+#include "mock-fastled.h"
 #include "mock-main.h"
 #endif
 
