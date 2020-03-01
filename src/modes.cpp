@@ -651,7 +651,7 @@ namespace Modes {
                 }
 
                 int leds_amount = (int)((float)NUM_LEDS * percentage_played);
-                for (int i = 0; i < leds_amount; i++) {
+                for (int i = 0; i < min(leds_amount, NUM_LEDS); i++) {
                     leds[i] = progress_color;
                 }
             }
