@@ -33,6 +33,6 @@ class MockSerial {
 extern MockSerial Serial;
 
 extern void randomSeed( uint32_t dwSeed );
-uint32_t millis();
+unsigned long millis();
 
 long int random(int min, int max);
