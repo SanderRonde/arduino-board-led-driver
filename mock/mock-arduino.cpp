@@ -30,12 +30,12 @@ size_t MockSerial::print(int x) {
 int MockSerial::available() {
 	if (is_available) return true;
 
-	bool result = _read(0, serial_buf, 1) > 0;
-	is_available = result;
-	return result;
+	is_available = inputAvailable();
+	return is_available;
 }
 char MockSerial::read() {
 	if (is_available) {
+		_read(0, serial_buf, 1);
 		char result = serial_buf[0];
 		serial_buf[0] = '\0';
 		is_available = false;
