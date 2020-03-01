@@ -816,7 +816,6 @@ namespace Modes {
                 }
                 beat_run_index = 0;
 
-                int beat_start = beat_write_index;
                 int beat_end = min(beat_write_index + BEAT_CHUNK_BEATS, total_beats);
                 for (; beat_write_index < beat_end; beat_write_index++) {
                     beats[beat_write_index].start = read_num(&block_index, &char_index, &err);

@@ -23,6 +23,7 @@ CRGB& CRGB::setHSV (uint8_t hue, uint8_t sat, uint8_t val) {
 	r = 0;
 	g = 0;
 	b = 0;
+	return *this;
 }
 CRGB& CRGB::nscale8 (uint8_t scaledown ) {
 	if (scaledown == 0) {
@@ -34,6 +35,7 @@ CRGB& CRGB::nscale8 (uint8_t scaledown ) {
 		g = g * (scaledown / 256);
 		b = b * (scaledown / 256);
 	}
+	return *this;
 }
 
 

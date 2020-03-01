@@ -15,10 +15,10 @@ void MockSerial::begin(const uint32_t dwBaudRate) {
         printf("[mock] serial started, using baud rate %ul\n", dwBaudRate);
     }
 };
-size_t MockSerial::println(const char* x) { printf("%s\n", x); }
-size_t MockSerial::println(int x) { printf("%d\n", x); }
-size_t MockSerial::print(const char* x) { printf("%s", x); }
-size_t MockSerial::print(int x) { printf("%d", x); }
+size_t MockSerial::println(const char* x) { return printf("%s\n", x); }
+size_t MockSerial::println(int x) { return printf("%d\n", x); }
+size_t MockSerial::print(const char* x) { return printf("%s", x); }
+size_t MockSerial::print(int x) { return printf("%d", x); }
 int MockSerial::available() {
     if (is_available) return true;
 
