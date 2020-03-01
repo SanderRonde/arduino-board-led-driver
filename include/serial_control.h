@@ -29,11 +29,12 @@ typedef struct words {
 namespace SerialControl {
     extern char* char_blocks[MAX_ARG_BLOCKS];
     extern boolean new_data;
+    extern bool no_draw;
 
     void handle_serial();
 
     void clear_char_buffers();
     void signal_read();
 
-    void recv_with_end_marker();
+    void read_serial();
 }  // namespace SerialControl

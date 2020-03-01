@@ -6,14 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern char _end;
-extern "C" char* sbrk(int i);
-char* ramstart = (char*)0x20070000;
-char* ramend = (char*)0x20088000;
-
 namespace SerialControl {
     char* char_blocks[MAX_ARG_BLOCKS];
-    boolean new_data = false;
+    bool new_data = false;
+    bool no_draw = false;
 
     words_t* parse_serial() {
         words_t* words = (words_t*)malloc(sizeof(words_t));
@@ -135,11 +131,16 @@ namespace SerialControl {
         free(words);
     }
 
-    void recv_with_end_marker() {
+    void read_explicit() {
+        // Send marker indicating we're ready to receive and then just infinitely wait
+        Serial.println("|1");
+    }
+
+    void read_serial() {
         if (!Serial.available()) return;
 
         char rc;
-        char endMarker = '\n';
+        char end_marker = '\n';
         int char_index = 0;
         int block_index = 0;
 
@@ -151,13 +152,34 @@ namespace SerialControl {
 
             rc = Serial.read();
 
+            if (rc == '>') {
+                // Send marker indicating we're ready to receive and then just infinitely wait
+                Serial.println("|1");
+
+                no_draw = true;
+                
+                while (!Serial.available()) {}
+                rc = Serial.read();
+                if (rc == '\n') {
+                    continue;
+                }
+            }
+            if (rc == '<') {
+                no_draw = false;
+                while (!Serial.available()) {}
+                rc = Serial.read();
+                if (rc == '\n') {
+                    continue;
+                }
+            }
+
             if (char_blocks[block_index] == NULL) {
                 char_blocks[block_index] =
                     (char*)malloc(sizeof(char) * ARG_BLOCK_LEN);
                 memset(char_blocks[block_index], 0, sizeof(char) * ARG_BLOCK_LEN);
             }
 
-            if (rc != endMarker) {
+            if (rc != end_marker) {
                 char_blocks[block_index][char_index] = rc;
                 char_index++;
                 if (char_index >= ARG_BLOCK_LEN) {
@@ -169,9 +191,19 @@ namespace SerialControl {
                     }
                 }
             } else {
+                if (block_index == 0 && char_index == 0) return;
+
                 char_blocks[block_index][char_index] =
                     '\0';  // terminate the string
                 new_data = true;
+                printf("read text:\n");
+                for (int i = 0; i <= block_index; i++) {
+                    char buf[ARG_BLOCK_LEN + 1];
+                    strncpy(buf, char_blocks[i], sizeof(char) * ARG_BLOCK_LEN);
+                    buf[ARG_BLOCK_LEN] = '\0';
+                    printf("%s", buf);
+                }
+                printf("\n");
 
                 return;
             }

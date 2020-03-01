@@ -11,7 +11,7 @@
 #define BEAT_MAX_DURATION 500
 #define MAX_CONFIDENCE 70
 
-#define BEAT_CHUNK_BEATS 20
+#define BEAT_CHUNK_BEATS 10000
 #define BEAT_CHUNK_SIZE BEAT_CHUNK_BEATS * 3
 
 namespace Modes {

@@ -19,7 +19,7 @@ CRGB leds[NUM_LEDS] = {CRGB::Black};
 unsigned long last_run = millis() - 1;
 void loop() {
     // Fetch serial data
-    SerialControl::recv_with_end_marker();
+    SerialControl::read_serial();
 
     // Assert iterate FN exists
     if (Modes::iterate_fn == NULL) {
@@ -36,20 +36,22 @@ void loop() {
     }
 
     // If new data, iterate
-    if (Modes::force_update) {
-        // Do iterate function
-        Modes::iterate_fn();
+    if (!SerialControl::no_draw) {
+        if (Modes::force_update) {
+            // Do iterate function
+            Modes::iterate_fn();
 
-        // Reset new_data
-        Modes::force_update = false;
-    } else if (Modes::mode_update_time == 0) {
-        // Do iterate function
-        Modes::iterate_fn();
-    } else if (millis() - last_run >= Modes::mode_update_time) {
-        // Set last run
-        last_run = millis();
+            // Reset new_data
+            Modes::force_update = false;
+        } else if (Modes::mode_update_time == 0) {
+            // Do iterate function
+            Modes::iterate_fn();
+        } else if (millis() - last_run >= Modes::mode_update_time) {
+            // Set last run
+            last_run = millis();
 
-        // Do iterate function
-        Modes::iterate_fn();
+            // Do iterate function
+            Modes::iterate_fn();
+        }
     }
 }
