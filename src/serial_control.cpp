@@ -130,10 +130,6 @@ namespace SerialControl {
             get_help(words);
         }
         Serial.println("ack");
-        Serial.println("ack");
-        Serial.println("ack");
-        Serial.println("ack");
-        Serial.println("ack");
 
         signal_read();
         free(words);
