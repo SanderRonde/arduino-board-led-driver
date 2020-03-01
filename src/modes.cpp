@@ -8,10 +8,10 @@
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
 #define MAX_FLASH_LEN 256
-#define BEAT_MAX_DURATION 200
-#define MAX_CONFIDENCE 0.7
+#define BEAT_MAX_DURATION 500
+#define MAX_CONFIDENCE 70
 
-#define BEAT_CHUNK_BEATS 80
+#define BEAT_CHUNK_BEATS 20
 #define BEAT_CHUNK_SIZE BEAT_CHUNK_BEATS * 3
 
 namespace Modes {
@@ -659,19 +659,21 @@ namespace Modes {
             if (is_playing) {
                 unsigned long play_time = millis() - play_start;
 
-                while (beat_run_index < total_beats &&
+                int upperbound = min(beat_write_index, total_beats);
+                while (beat_run_index < upperbound &&
                        play_time > beats[beat_run_index].end) {
                     beat_run_index++;
                 }
 
-                if (beat_run_index < total_beats) {
+                if (beat_run_index < upperbound) {
                     beat_struct_t current_beat = beats[beat_run_index];
-                    unsigned long play_diff = play_time - current_beat.start;
+                    long play_diff = play_time - current_beat.start;
                     if (play_diff >= 0) {
                         // Inside of the beat
                         float confidence_scale =
-                            (float)current_beat.confidence /
-                            (float)min(MAX_CONFIDENCE, current_beat.confidence);
+                            (float)min(MAX_CONFIDENCE,
+                                       current_beat.confidence) /
+                            (float)MAX_CONFIDENCE;
                         unsigned long beat_duration =
                             current_beat.end - current_beat.start;
                         float fade_scale =
@@ -679,17 +681,15 @@ namespace Modes {
 
                         float brightness = confidence_scale * fade_scale;
                         float inverse_brightness = 1 - brightness;
+                        CRGB foreground_copy = CRGB(foreground_color);
                         CRGB flash_color =
-                            foreground_color.nscale8(brightness * 256);
+                            foreground_copy.nscale8(brightness * 256);
 
                         for (int i = 0; i < NUM_LEDS; i++) {
                             leds[i].nscale8(inverse_brightness * 256);
                             leds[i] += flash_color;
                         }
-
-                        Serial.println("Beat!");
                     } else {
-                        Serial.println("No Beat!");
                         // Not inside of the beat, don't draw it
                     }
                 }
@@ -737,7 +737,7 @@ namespace Modes {
         }
 
         unsigned long read_num(int* block_index, int* char_index, int* err) {
-            char num_buf[ARG_BLOCK_LEN] = { 0 };
+            char num_buf[ARG_BLOCK_LEN] = {0};
             int index = 0;
 
             if (*block_index >= MAX_ARG_BLOCKS) return 0;
@@ -799,8 +799,12 @@ namespace Modes {
                 last_playing_time = 0;
             } else if (input_mode == 'b') {
                 int err = 0;
-                if (SerialControl::char_blocks[block_index][char_index] == '+') {
-                    char_index += 2;
+                if (SerialControl::char_blocks[block_index][char_index] ==
+                    '+') {
+                    char_index++;
+
+                    beat_write_index =
+                        (int)read_num(&block_index, &char_index, &err);
                 } else {
                     // Free previous one
                     if (beats != NULL) {
@@ -808,18 +812,21 @@ namespace Modes {
                     }
 
                     // Allocate array
-                    total_beats = (int)read_num(&block_index, &char_index, &err);
+                    total_beats =
+                        (int)read_num(&block_index, &char_index, &err);
                     if (err) return SerialControl::signal_read();
                     ;
-                    beats =
-                        (beat_struct_t*)malloc(sizeof(beat_struct_t) * total_beats);
+                    beats = (beat_struct_t*)malloc(sizeof(beat_struct_t) *
+                                                   total_beats);
                     beat_write_index = 0;
                 }
                 beat_run_index = 0;
 
-                int beat_end = min(beat_write_index + BEAT_CHUNK_BEATS, total_beats);
+                int beat_end =
+                    min(beat_write_index + BEAT_CHUNK_BEATS, total_beats);
                 for (; beat_write_index < beat_end; beat_write_index++) {
-                    beats[beat_write_index].start = read_num(&block_index, &char_index, &err);
+                    beats[beat_write_index].start =
+                        read_num(&block_index, &char_index, &err);
                     if (err) return SerialControl::signal_read();
                     ;
 
@@ -828,7 +835,8 @@ namespace Modes {
                     if (err) return SerialControl::signal_read();
                     ;
                     beats[beat_write_index].end =
-                        beats[beat_write_index].start + min(BEAT_MAX_DURATION, duration);
+                        beats[beat_write_index].start +
+                        min(BEAT_MAX_DURATION, duration);
 
                     int confidence =
                         (int)read_num(&block_index, &char_index, &err);
@@ -836,16 +844,16 @@ namespace Modes {
                     ;
                     beats[beat_write_index].confidence = confidence;
                 }
+
+                printf("Read %d beats at this point. That is %ld seconds\n",
+                       beat_write_index,
+                       beats[beat_write_index - 1].start / 1000);
             } else {
                 // No match, return
                 return;
             }
 
             Serial.println("ack");
-            Serial.println("ack");
-            Serial.println("ack");
-            Serial.println("ack");
-            Serial.println("ack-override");
 
             SerialControl::signal_read();
         }
