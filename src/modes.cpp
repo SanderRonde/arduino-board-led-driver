@@ -11,6 +11,9 @@
 #define BEAT_MAX_DURATION 200
 #define MAX_CONFIDENCE 0.7
 
+#define BEAT_CHUNK_BEATS 80
+#define BEAT_CHUNK_SIZE BEAT_CHUNK_BEATS * 3
+
 namespace Modes {
     Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
 
@@ -617,13 +620,14 @@ namespace Modes {
 
         // "runtime" configs
         bool is_playing = false;
-        uint32_t duration = 0;
-        uint32_t play_start = 0;
+        unsigned long duration = 0;
+        unsigned long play_start = 0;
         int total_beats = 0;
+        int beat_write_index = 0;
         beat_struct_t* beats = NULL;
 
         // Runtime configs
-        uint32_t last_playing_time = 0;
+        unsigned long last_playing_time = 0;
         int beat_run_index = 0;
 
         void do_iteration() {
@@ -633,7 +637,7 @@ namespace Modes {
             }
 
             // Draw progress bar
-            if (!progress_disabled) {
+            if (!progress_disabled && play_start > 0) {
                 if (is_playing) {
                     last_playing_time = millis() - play_start;
                 }
@@ -793,25 +797,29 @@ namespace Modes {
                 duration = num;
                 last_playing_time = 0;
             } else if (input_mode == 'b') {
-                // Free previous one
-                if (beats != NULL) {
-                    free(beats);
-                }
-
-                // Allocate array
                 int err = 0;
-                total_beats = (int)read_num(&block_index, &char_index, &err);
-                if (err) return SerialControl::signal_read();
-                ;
-                beats =
-                    (beat_struct_t*)malloc(sizeof(beat_struct_t) * total_beats);
+                if (SerialControl::char_blocks[block_index][char_index] == '+') {
+                    char_index += 2;
+                } else {
+                    // Free previous one
+                    if (beats != NULL) {
+                        free(beats);
+                    }
+
+                    // Allocate array
+                    total_beats = (int)read_num(&block_index, &char_index, &err);
+                    if (err) return SerialControl::signal_read();
+                    ;
+                    beats =
+                        (beat_struct_t*)malloc(sizeof(beat_struct_t) * total_beats);
+                    beat_write_index = 0;
+                }
                 beat_run_index = 0;
 
-                Serial.print("Total beats = ");
-                Serial.println(total_beats);
-
-                for (int i = 0; i < total_beats; i++) {
-                    beats[i].start = read_num(&block_index, &char_index, &err);
+                int beat_start = beat_write_index;
+                int beat_end = min(beat_write_index + BEAT_CHUNK_BEATS, total_beats);
+                for (; beat_write_index < beat_end; beat_write_index++) {
+                    beats[beat_write_index].start = read_num(&block_index, &char_index, &err);
                     if (err) return SerialControl::signal_read();
                     ;
 
@@ -819,14 +827,14 @@ namespace Modes {
                         read_num(&block_index, &char_index, &err);
                     if (err) return SerialControl::signal_read();
                     ;
-                    beats[i].end =
-                        beats[i].start + min(BEAT_MAX_DURATION, duration);
+                    beats[beat_write_index].end =
+                        beats[beat_write_index].start + min(BEAT_MAX_DURATION, duration);
 
                     int confidence =
                         (int)read_num(&block_index, &char_index, &err);
                     if (err) return SerialControl::signal_read();
                     ;
-                    beats[i].confidence = confidence;
+                    beats[beat_write_index].confidence = confidence;
                 }
             } else {
                 // No match, return
