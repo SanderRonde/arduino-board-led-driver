@@ -32,6 +32,7 @@ int MockSerial::available() {
 
 	bool result = _read(0, serial_buf, 1) > 0;
 	is_available = result;
+	return result;
 }
 char MockSerial::read() {
 	if (is_available) {
