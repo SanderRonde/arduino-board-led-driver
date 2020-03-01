@@ -196,14 +196,6 @@ namespace SerialControl {
                 char_blocks[block_index][char_index] =
                     '\0';  // terminate the string
                 new_data = true;
-                printf("read text:\n");
-                for (int i = 0; i <= block_index; i++) {
-                    char buf[ARG_BLOCK_LEN + 1];
-                    strncpy(buf, char_blocks[i], sizeof(char) * ARG_BLOCK_LEN);
-                    buf[ARG_BLOCK_LEN] = '\0';
-                    printf("%s", buf);
-                }
-                printf("\n");
 
                 return;
             }
