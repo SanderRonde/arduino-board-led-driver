@@ -1,6 +1,5 @@
+#include "../include/mock-arduino.h"
 #include "../include/mock-main.h"
-#include <string.h>
-#include <stdio.h>
 
 #define VERBOSE_ARG "--verbose"
 #define VERBOSE_SHORT_ARG "-v"
@@ -18,9 +17,11 @@ int main(int argc, char* argv[]) {
 	if (verbose) {
 		printf("[mock] using verbose. Booting...\n");
 	}
+	unsigned long setup_start = millis();
 	setup();
+	unsigned long setup_duration = millis() - setup_start;
 	if (verbose) {
-		printf("[mock] setup done, running main loop\n");
+		printf("[mock] setup done in %lu ms, running main loop\n", setup_duration);
 	}
 	while (true) {
 		loop();
