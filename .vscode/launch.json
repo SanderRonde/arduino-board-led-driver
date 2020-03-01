@@ -25,7 +25,8 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "build"
         },
         {
             "name": "(gdb) Launch (debug)",
@@ -44,7 +45,8 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "build"
         },
         {
             "type": "platformio-debug",
