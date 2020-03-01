@@ -24,9 +24,15 @@ build: mkdir
 	$(COMPILER) $(SRCFILES) $(FLAGS) -o $(OUT_FILE) $(LIBS)
 
 run: build
-	$(OUT_DIR)/$(FILENAME)
+	$(OUT_FILE)
 
 run-verbose: build
-	$(OUT_DIR)/$(FILENAME) -v
+	$(OUT_FILE) -v
 
 run-v: run-verbose
+
+gdb: build
+	gdb $(OUT_FILE)
+
+gdb-remote: build
+	gdbserver :9091 $(OUT_FILE)
