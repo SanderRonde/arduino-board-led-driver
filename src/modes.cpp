@@ -589,11 +589,7 @@ namespace Modes {
         void handle_serial(words_t* words) {
             serial_override = NULL;
             update_time = atoi(words->text[2]);
-            if (update_time == 0) {
-                mode_update_time = 1000;
-            } else {
-                mode_update_time = update_time;
-            }
+            mode_update_time = update_time;
             block_size = atoi(words->text[3]);
             if (block_size == 0) {
                 block_size = 1;
