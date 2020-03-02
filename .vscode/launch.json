@@ -45,7 +45,7 @@
             "preLaunchTask": "build"
         },
         {
-            "name": "(gdb) Launch (debug)",
+            "name": "(gdb) Launch (verbose)",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/main",
