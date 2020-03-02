@@ -7,7 +7,7 @@
 #define HOLD_TIME 3000
 
 #define MAX_WORD_LEN 32
-#define MAX_WORDS 32
+#define MAX_WORDS 128
 
 #define WORD_EQ(words, index, expected) \
     strcmp(words->text[index], expected) == 0
