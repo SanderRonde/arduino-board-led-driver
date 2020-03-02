@@ -16,7 +16,7 @@
 #define BEAT_CHUNK_BEATS 10000
 #define BEAT_CHUNK_SIZE BEAT_CHUNK_BEATS * 3
 
-#define DEBUG_BEATS 1
+// #define DEBUG_BEATS 1
 
 namespace Modes {
     Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
