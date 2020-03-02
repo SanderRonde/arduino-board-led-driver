@@ -8,11 +8,15 @@
 #define MAX_SPLIT_COLORS 10
 #define MAX_PATTERN_LEN 20
 #define MAX_FLASH_LEN 256
-#define BEAT_MAX_DURATION 500
+#define BEAT_MAX_DURATION 200
+#define BEAT_DURATION_SCALE_SIZE 400
 #define MAX_CONFIDENCE 70
+#define MIN_CONFIDENCE 35
 
 #define BEAT_CHUNK_BEATS 10000
 #define BEAT_CHUNK_SIZE BEAT_CHUNK_BEATS * 3
+
+#define DEBUG_BEATS 1
 
 namespace Modes {
     Modes::led_mode_t cur_mode = Modes::LED_MODE_OFF;
@@ -621,13 +625,13 @@ namespace Modes {
         // "runtime" configs
         bool is_playing = false;
         unsigned long duration = 0;
-        unsigned long play_start = 0;
+        long long start_time_diff = 0;
         int total_beats = 0;
         int beat_write_index = 0;
         beat_struct_t* beats = NULL;
 
         // Runtime configs
-        unsigned long last_playing_time = 0;
+        long long last_playing_time = 0;
         int beat_run_index = 0;
 
         void do_iteration() {
@@ -636,10 +640,26 @@ namespace Modes {
                 leds[i] = background_color;
             }
 
+            // Say at time 3 i'm sent that start_time_diff = 5
+            // then it started at -2
+            // that means at time 4, it has been playing for 6 (2 + 4)
+            // so to calculate playing_time, do millis() + X
+            // where X is the time that it started before millis() existed
+            // so if initially, millis() < start_time_diff, set
+            // X to start_time_diff - millis()
+            // if millis() >= start_time_diff then
+            // 
+            // Say at time 5 i'm sent that start_time_diff = 3
+            // then it started at 2
+            // that means that at time 6 it has been playing for 4
+            // which is equal to millis() + X
+            // where X is start_time_diff - millis()
+            long long playing_time = (long long) millis() + start_time_diff;
+
             // Draw progress bar
-            if (!progress_disabled && play_start > 0) {
+            if (!progress_disabled && start_time_diff != 0) {
                 if (is_playing) {
-                    last_playing_time = millis() - play_start;
+                    last_playing_time = playing_time;
                 }
 
                 float percentage_played;
@@ -657,17 +677,15 @@ namespace Modes {
             }
 
             if (is_playing) {
-                unsigned long play_time = millis() - play_start;
-
                 int upperbound = min(beat_write_index, total_beats);
                 while (beat_run_index < upperbound &&
-                       play_time > beats[beat_run_index].end) {
+                       playing_time > beats[beat_run_index].end) {
                     beat_run_index++;
                 }
 
-                if (beat_run_index < upperbound) {
+                if (beat_run_index < upperbound && beats[beat_run_index].confidence > MIN_CONFIDENCE) {
                     beat_struct_t current_beat = beats[beat_run_index];
-                    long play_diff = play_time - current_beat.start;
+                    long long play_diff = playing_time - current_beat.start;
                     if (play_diff >= 0) {
                         // Inside of the beat
                         float confidence_scale =
@@ -679,15 +697,18 @@ namespace Modes {
                         float fade_scale =
                             1.0 - ((float)play_diff / (float)beat_duration);
 
-                        float brightness = confidence_scale * fade_scale;
-                        float inverse_brightness = 1 - brightness;
+                        float brightness = max(confidence_scale * fade_scale, 0);
+                        float inverse_brightness = (1 - brightness) / 4;
                         CRGB foreground_copy = CRGB(foreground_color);
-                        CRGB flash_color =
-                            foreground_copy.nscale8(brightness * 256);
+                        foreground_copy.nscale8(max(brightness, 0.4) * 256);
+                        #ifdef DEBUG_BEATS
+                        printf("Beat, brightness: %.6f, inverse: %.6f. Duration: %lu. Diff: %lld, index: %d. Confidence: %d\n",
+                            brightness, inverse_brightness, beat_duration, play_diff, beat_run_index, current_beat.confidence);
+                        #endif
 
                         for (int i = 0; i < NUM_LEDS; i++) {
-                            leds[i].nscale8(inverse_brightness * 256);
-                            leds[i] += flash_color;
+                            leds[i].nscale8(inverse_brightness * 256.0);
+                            leds[i] += foreground_copy;
                         }
                     } else {
                         // Not inside of the beat, don't draw it
@@ -787,7 +808,7 @@ namespace Modes {
                 unsigned long num = read_num(&block_index, &char_index, &err);
                 if (err) return SerialControl::signal_read();
                 ;
-                play_start = num;
+                start_time_diff = (long long) num - (long long) millis();
                 beat_run_index = 0;
             } else if (input_mode == 'd') {
                 // Duration
@@ -797,6 +818,7 @@ namespace Modes {
                 ;
                 duration = num;
                 last_playing_time = 0;
+                beat_run_index = 0;
             } else if (input_mode == 'b') {
                 int err = 0;
                 if (SerialControl::char_blocks[block_index][char_index] ==
@@ -836,7 +858,7 @@ namespace Modes {
                     ;
                     beats[beat_write_index].end =
                         beats[beat_write_index].start +
-                        min(BEAT_MAX_DURATION, duration);
+                        duration;
 
                     int confidence =
                         (int)read_num(&block_index, &char_index, &err);
