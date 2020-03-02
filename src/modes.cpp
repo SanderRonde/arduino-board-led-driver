@@ -621,6 +621,8 @@ namespace Modes {
         CRGB foreground_color = CRGB::Black;
         CRGB progress_color = CRGB::Black;
         bool progress_disabled = false;
+        bool random_mode = false;
+        unsigned int block_size = 0;
 
         // "runtime" configs
         bool is_playing = false;
@@ -633,8 +635,37 @@ namespace Modes {
         // Runtime configs
         long long last_playing_time = 0;
         int beat_run_index = 0;
+        int last_random_beat_index = -1;
 
-        void do_iteration() {
+        int get_current_beat(long long playing_time, beat_struct_t* beat, int* index) {
+            if (is_playing) {
+                int upperbound = min(beat_write_index, total_beats);
+                while (beat_run_index < upperbound &&
+                       playing_time > beats[beat_run_index].end) {
+                    beat_run_index++;
+                }
+
+                if (beat_run_index < upperbound &&
+                    beats[beat_run_index].confidence > MIN_CONFIDENCE) {
+                    beat_struct_t current_beat = beats[beat_run_index];
+                    long long play_diff = playing_time - current_beat.start;
+                    if (play_diff >= 0) {
+                        if (index != NULL) {
+                            *index = beat_run_index;
+                        }
+                        if (beat != NULL) {
+                            *beat = current_beat;
+                        }
+                        return 0;
+                    } else {
+                        // Not inside of the beat
+                    }
+                }
+            }
+            return 1;
+        }
+
+        void do_flash_iteration() {
             // Draw background
             for (int i = 0; i < NUM_LEDS; i++) {
                 leds[i] = background_color;
@@ -648,13 +679,13 @@ namespace Modes {
             // so if initially, millis() < start_time_diff, set
             // X to start_time_diff - millis()
             // if millis() >= start_time_diff then
-            // 
+            //
             // Say at time 5 i'm sent that start_time_diff = 3
             // then it started at 2
             // that means that at time 6 it has been playing for 4
             // which is equal to millis() + X
             // where X is start_time_diff - millis()
-            long long playing_time = (long long) millis() + start_time_diff;
+            long long playing_time = (long long)millis() + start_time_diff;
 
             // Draw progress bar
             if (!progress_disabled && start_time_diff != 0) {
@@ -676,47 +707,65 @@ namespace Modes {
                 }
             }
 
-            if (is_playing) {
-                int upperbound = min(beat_write_index, total_beats);
-                while (beat_run_index < upperbound &&
-                       playing_time > beats[beat_run_index].end) {
-                    beat_run_index++;
-                }
+            beat_struct_t current_beat;
+            if (get_current_beat(playing_time, &current_beat, NULL) == 0) {
+                // Inside of the beat
+                long long play_diff = playing_time - current_beat.start;
+                float confidence_scale =
+                    (float)min(MAX_CONFIDENCE, current_beat.confidence) /
+                    (float)MAX_CONFIDENCE;
+                unsigned long beat_duration =
+                    current_beat.end - current_beat.start;
+                float fade_scale =
+                    1.0 - ((float)play_diff / (float)beat_duration);
 
-                if (beat_run_index < upperbound && beats[beat_run_index].confidence > MIN_CONFIDENCE) {
-                    beat_struct_t current_beat = beats[beat_run_index];
-                    long long play_diff = playing_time - current_beat.start;
-                    if (play_diff >= 0) {
-                        // Inside of the beat
-                        float confidence_scale =
-                            (float)min(MAX_CONFIDENCE,
-                                       current_beat.confidence) /
-                            (float)MAX_CONFIDENCE;
-                        unsigned long beat_duration =
-                            current_beat.end - current_beat.start;
-                        float fade_scale =
-                            1.0 - ((float)play_diff / (float)beat_duration);
+                float brightness = max(confidence_scale * fade_scale, 0);
+                float inverse_brightness = (1 - brightness) / 4;
+                CRGB foreground_copy = CRGB(foreground_color);
+                foreground_copy.nscale8(max(brightness, 0.4) * 256);
+#ifdef DEBUG_BEATS
+                printf(
+                    "Beat, brightness: %.6f, inverse: %.6f. Duration: "
+                    "%lu. Diff: %lld, index: %d. Confidence: %d\n",
+                    brightness, inverse_brightness, beat_duration, play_diff,
+                    beat_run_index, current_beat.confidence);
+#endif
 
-                        float brightness = max(confidence_scale * fade_scale, 0);
-                        float inverse_brightness = (1 - brightness) / 4;
-                        CRGB foreground_copy = CRGB(foreground_color);
-                        foreground_copy.nscale8(max(brightness, 0.4) * 256);
-                        #ifdef DEBUG_BEATS
-                        printf("Beat, brightness: %.6f, inverse: %.6f. Duration: %lu. Diff: %lld, index: %d. Confidence: %d\n",
-                            brightness, inverse_brightness, beat_duration, play_diff, beat_run_index, current_beat.confidence);
-                        #endif
-
-                        for (int i = 0; i < NUM_LEDS; i++) {
-                            leds[i].nscale8(inverse_brightness * 256.0);
-                            leds[i] += foreground_copy;
-                        }
-                    } else {
-                        // Not inside of the beat, don't draw it
-                    }
+                for (int i = 0; i < NUM_LEDS; i++) {
+                    leds[i].nscale8(inverse_brightness * 256.0);
+                    leds[i] += foreground_copy;
                 }
             }
 
             FastLED.show();
+        }
+
+        void do_random_iteration() {
+            long long playing_time = (long long)millis() + start_time_diff;
+
+            int index = 0;
+            if (get_current_beat(playing_time, NULL, &index) == 0 && index != last_random_beat_index) {
+                for (unsigned int i = 0; i < NUM_LEDS;) {
+                    CHSV color = CHSV(random(0, 255), 255, 255);
+
+                    for (unsigned int j = 0; j < block_size && i < NUM_LEDS;
+                         j++, i++) {
+                        leds[i] = color;
+                    }
+                }
+
+                last_random_beat_index = index;
+
+                FastLED.show();
+            }
+        }
+
+        void do_iteration() {
+            if (random_mode) {
+                do_random_iteration();
+            } else {
+                do_flash_iteration();
+            }
         }
 
         const char START_MARKER = '/';
@@ -808,7 +857,7 @@ namespace Modes {
                 unsigned long num = read_num(&block_index, &char_index, &err);
                 if (err) return SerialControl::signal_read();
                 ;
-                start_time_diff = (long long) num - (long long) millis();
+                start_time_diff = (long long)num - (long long)millis();
                 beat_run_index = 0;
             } else if (input_mode == 'd') {
                 // Duration
@@ -857,8 +906,7 @@ namespace Modes {
                     if (err) return SerialControl::signal_read();
                     ;
                     beats[beat_write_index].end =
-                        beats[beat_write_index].start +
-                        duration;
+                        beats[beat_write_index].start + duration;
 
                     int confidence =
                         (int)read_num(&block_index, &char_index, &err);
@@ -882,20 +930,32 @@ namespace Modes {
 
         void handle_serial(words_t* words) {
             FastLED.showColor(CRGB::Black);
-
-            foreground_color = CRGB(atoi(words->text[2]), atoi(words->text[3]),
-                                    atoi(words->text[4]));
-
-            background_color = CRGB(atoi(words->text[5]), atoi(words->text[6]),
-                                    atoi(words->text[7]));
-
-            progress_color = CRGB(atoi(words->text[8]), atoi(words->text[9]),
-                                  atoi(words->text[10]));
-            if (progress_color.r == 0 && progress_color.g == 0 &&
-                progress_color.b == 0) {
-                progress_disabled = true;
+            if (atoi(words->text[2]) == 1) {
+                random_mode = true;
+                block_size = atoi(words->text[3]);
+                foreground_color = CRGB::Black;
+                background_color = CRGB::Black;
+                progress_color = CRGB::Black;
             } else {
-                progress_disabled = false;
+                random_mode = false;
+                block_size = 0;
+                foreground_color =
+                    CRGB(atoi(words->text[4]), atoi(words->text[5]),
+                         atoi(words->text[6]));
+
+                background_color =
+                    CRGB(atoi(words->text[7]), atoi(words->text[8]),
+                         atoi(words->text[9]));
+
+                progress_color =
+                    CRGB(atoi(words->text[10]), atoi(words->text[11]),
+                         atoi(words->text[12]));
+                if (progress_color.r == 0 && progress_color.g == 0 &&
+                    progress_color.b == 0) {
+                    progress_disabled = true;
+                } else {
+                    progress_disabled = false;
+                }
             }
 
             iterate_fn = do_iteration;
@@ -906,7 +966,9 @@ namespace Modes {
 
         void help() {
             Serial.println(
-                "/ beats [r] [g] [b] [bg_r] [bg_g] [bg_b] [prog_r] [prog_g] "
+                "/ beats [random] [block_size] [r] [g] [b] [bg_r] [bg_g] "
+                "[bg_b] [prog_r] "
+                "[prog_g] "
                 "[prog_b] \\");
         }
     }  // namespace Beats
