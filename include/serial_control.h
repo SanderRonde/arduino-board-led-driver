@@ -3,10 +3,10 @@
 #include "globals.h"
 
 #define ARG_BLOCK_LEN 512
-#define MAX_ARG_BLOCKS 32
+#define MAX_ARG_BLOCKS 64
 #define HOLD_TIME 3000
 
-#define MAX_WORD_LEN 32
+#define MAX_WORD_LEN 64
 #define MAX_WORDS 128
 
 #define WORD_EQ(words, index, expected) \
