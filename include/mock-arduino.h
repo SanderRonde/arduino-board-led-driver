@@ -11,33 +11,18 @@
 #define min(a, b) Min(a, b)
 #define Max(a, b) (((a) > (b)) ? (a) : (b))
 #define max(a, b) Max(a, b)
-#define SERIAL_BUF_SIZE 64
+
+typedef uint8_t byte;
 
 uint32_t analogRead(uint32_t ulPin);
-
-class MockSerial {
-   private:
-    char serial_buf[SERIAL_BUF_SIZE] = { 0 };
-    bool is_available = false;
-
-    fd_set fds;
-
-   public:
-    void begin(const uint32_t dwBaudRate);
-    size_t println(const char* x);
-    size_t println(int x);
-    size_t print(const char* x);
-    size_t print(int x);
-
-    int available();
-    char read();
-
-    operator bool() { return true; };
-};
-extern MockSerial Serial;
 
 extern void randomSeed(uint32_t dwSeed);
 unsigned long _millis();
 unsigned long millis();
 
 long int random(int min, int max);
+void delay(unsigned long duration);
+
+class String {
+    
+};

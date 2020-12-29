@@ -113,6 +113,7 @@ struct CRGB {
         b = 0;
         return *this;
     }
+    inline uint8_t& operator[](uint8_t x) { return raw[x]; };
 
     CRGB& setHSV(uint8_t hue, uint8_t sat, uint8_t val);
     CRGB& nscale8(uint8_t scaledown);
