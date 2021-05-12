@@ -470,10 +470,6 @@ namespace Manual {
         }
     }
 
-    void setup() {
-        Drawing::draw_blank();
-    }
-
     char serial_text[512];
     void loop() {
 #ifdef MOCK
