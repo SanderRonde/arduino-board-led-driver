@@ -11,6 +11,7 @@ void setup() {
     while (!Serial) {
     }
 
+    Manual::setup()
     randomSeed(analogRead(0));
 }
 

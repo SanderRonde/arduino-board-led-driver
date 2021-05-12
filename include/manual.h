@@ -3,6 +3,7 @@
 #include "../include/globals.h"
 
 namespace Manual {
+    void setup();
     void loop();
 
     enum MOVING_STATUS {
