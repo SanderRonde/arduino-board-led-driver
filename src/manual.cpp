@@ -446,6 +446,7 @@ namespace Manual {
 
         void draw() {
             if (!led_effect.filled) {
+                draw_blank();
                 return;
             }
 
@@ -481,7 +482,6 @@ namespace Manual {
                 Serial.println(NUM_LEDS);
             } else if (!strncmp(serial_text, "off", read_bytes)) {
                 Parsing::turn_off();
-                Drawing::draw_blank();
             } else if (strncmp(serial_text, "manual",
                                min(read_bytes, strlen("manual"))) == 0) {
                 serial_text[read_bytes] = '\0';
