@@ -1,3 +1,6 @@
+# To use: make `launch.json` entry that launches and attaches GDB to `build/main`
+# Mock data is at the top of `manual.cpp`
+
 COMPILER := gcc
 MKDIR_P = mkdir -p
 DEBUG_FLAGS := -g -ggdb
