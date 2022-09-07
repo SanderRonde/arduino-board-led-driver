@@ -8,9 +8,7 @@
 
 #define boolean bool
 #define Min(a, b) (((a) < (b)) ? (a) : (b))
-#define min(a, b) Min(a, b)
 #define Max(a, b) (((a) > (b)) ? (a) : (b))
-#define max(a, b) Max(a, b)
 
 typedef uint8_t byte;
 
