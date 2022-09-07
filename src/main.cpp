@@ -1,19 +1,23 @@
-#include "../include/globals.h"
-#include "../include/manual.h"
+#include "api.h"
+#include "globals.h"
+#include "lib-includes.h"
+#include "lib-main.h"
+#include "lib-ota.h"
+#include "lib-telnet.h"
+#include "secrets.h"
+#include "stepper.h"
+#include "string.h"
 
 void setup() {
     Serial.begin(115200);
-#ifndef MOCK
-    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS, 0);
-#else
-    FastLED.addLeds(leds, NUM_LEDS, 0);
-#endif
-    while (!Serial) {
-    }
-
-    randomSeed(analogRead(0));
+    Serial.println("Booting");
+    Telnet::setup(String("board-ceiling-leds").c_str(), WIFI_SSID, WIFI_PW);
+    Stepper::setup();
+    API::setup();
+    Main::connect_done();
 }
 
-CRGB leds[NUM_LEDS] = {CRGB::Black};
-unsigned long last_run = millis() - 1;
-void loop() { Manual::loop(); }
+void loop() {
+    API::loop();
+    Stepper::loop();
+}
