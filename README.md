@@ -1,6 +1,16 @@
 # Arduino board LED driver
 
-This repo contains the code for an arduino board driving an individually addressable LED strip. It uses the [FastLED](https://github.com/FastLED/FastLED) library to interface with the LEDs. This repo mostly contains code related to the creating of certain modes. For example the "solid" mode sets a solid color, the "flash" mode blinks a color, the "dot" mode makes a given number of dots of given colors go around at a given speed. They can all be found in `src/modes.cpp`.
+This repo contains the code for an arduino board driving an individually addressable LED strip. It uses the [FastLED](https://github.com/FastLED/FastLED) library to interface with the LEDs. The goal of this project was to have an RGB strip that is both easily controllable from a server (as little hardcoded effects as possible) while still being as fast as possible (server doesn't send every frame). The solution was to make it possible for the server to define the following:
+- An effect, this is the highest-level definition
+- It contains any number of steps. Each step can indicate how long it runs before the next step is chosen. This can be used to for example create a strobe effect.
+- A step contains data about how it moves (direction, move interval), a background color and any number of sequences. These sequences are painted on top of each other. We
+- A sequence can be:
+	- A single color (can be used to layer a rainbow pattern if you combine a bunch)
+	- A sequence of colors that repeat N number of times
+	- A randomly colored pixel (can be more than 1 pixel) and the period by which it switches color
+	- Unpainted pixels
+
+Together this can be used to draw quite a few pretty effects with it all remaining configurable from the server.
 
 This project uses [PlatformIO](https://platformio.org/) for simple uploading and interfacing with the board itself.
 
